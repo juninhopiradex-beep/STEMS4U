@@ -67,12 +67,13 @@ jobs:
       - run: ditto -c -k --keepParent dist/STEMS4U.app STEMS4U-macOS-Intel.zip
       - uses: actions/upload-artifact@v4
         with: { name: STEMS4U-macOS-Intel, path: STEMS4U-macOS-Intel.zip }
-      - run: bash packaging/publish_release.sh STEMS4U-macOS-Intel.zip
       - name: Verificar que corre em macOS 10.15
         continue-on-error: true
         run: bash packaging/ci_run.sh bash packaging/check_macos_min.sh dist/STEMS4U.app 10.15
       - name: Teste de arranque do executável
         run: bash packaging/ci_run.sh dist/STEMS4U.app/Contents/MacOS/STEMS4U info
+      - name: Publicar em Releases (só se os testes passaram)
+        run: bash packaging/publish_release.sh STEMS4U-macOS-Intel.zip
 
   macos-arm:
     name: macOS Apple Silicon
@@ -82,14 +83,14 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: "3.11" }
       - run: |
-          pip install -r requirements.txt pyinstaller==6.11.1 "setuptools<80"
+          pip install -r requirements.txt "pyinstaller>=6.16" "setuptools<80"
           pip install demucs==4.0.1 --no-deps
       - run: pyinstaller packaging/stems4u.spec --noconfirm --distpath dist --workpath build
       - run: ditto -c -k --keepParent dist/STEMS4U.app STEMS4U-macOS-AppleSilicon.zip
       - uses: actions/upload-artifact@v4
         with: { name: STEMS4U-macOS-AppleSilicon, path: STEMS4U-macOS-AppleSilicon.zip }
-      - run: bash packaging/publish_release.sh STEMS4U-macOS-AppleSilicon.zip
       - run: bash packaging/ci_run.sh dist/STEMS4U.app/Contents/MacOS/STEMS4U info
+      - run: bash packaging/publish_release.sh STEMS4U-macOS-AppleSilicon.zip
 
   windows:
     name: Windows 10/11
@@ -99,14 +100,14 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: "3.11" }
       - run: |
-          pip install -r requirements.txt pyinstaller==6.11.1 "setuptools<80"
+          pip install -r requirements.txt "pyinstaller>=6.16" "setuptools<80"
           pip install demucs==4.0.1 --no-deps
       - run: pyinstaller packaging/stems4u.spec --noconfirm --distpath dist --workpath build
       - run: Compress-Archive -Path dist\STEMS4U -DestinationPath STEMS4U-Windows.zip
         shell: pwsh
       - uses: actions/upload-artifact@v4
         with: { name: STEMS4U-Windows, path: STEMS4U-Windows.zip }
-      - run: bash packaging/publish_release.sh STEMS4U-Windows.zip
-        shell: bash
       - run: bash packaging/ci_run.sh dist/STEMS4U/STEMS4U.exe info
+        shell: bash
+      - run: bash packaging/publish_release.sh STEMS4U-Windows.zip
         shell: bash
