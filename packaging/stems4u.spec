@@ -13,6 +13,15 @@ a = Analysis([str(ROOT / "packaging" / "launch.py")], pathex=[str(ROOT)],
              hiddenimports=hidden,
              excludes=["tkinter", "matplotlib", "IPython", "pytest", "torch.utils.tensorboard", "caffe2"],
              noarchive=False)
+# As bibliotecas de áudio que o torchaudio traz (sox, ffmpeg, flac…) exigem macOS 12 e não são usadas:
+# o STEMS4U lê e grava áudio com libsndfile. O torchaudio só é importado pelo filtro de Wiener do Demucs.
+def _keep(entry):
+    dest = entry[0].replace("\\", "/")
+    return not ("torchaudio/.dylibs/" in dest or "torchaudio/__dot__dylibs/" in dest
+                or "torchaudio/lib/libtorchaudio_sox" in dest or "torchaudio/lib/_torchaudio_sox" in dest
+                or "torchaudio/lib/libtorio_ffmpeg" in dest or "torchaudio/lib/_torchaudio_ffmpeg" in dest)
+a.binaries = [b for b in a.binaries if _keep(b)]
+a.datas = [d for d in a.datas if _keep(d)]
 pyz = PYZ(a.pure)
 exe = EXE(pyz, a.scripts, [], exclude_binaries=True, name="STEMS4U", console=False,
           icon=None, target_arch=None, codesign_identity=None, entitlements_file=None)

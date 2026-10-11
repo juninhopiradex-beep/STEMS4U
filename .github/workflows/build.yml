@@ -74,7 +74,7 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: "3.11" }
       - run: |
-          pip install -r requirements.txt pyinstaller==6.11.1
+          pip install -r requirements.txt pyinstaller==6.11.1 "setuptools<80"
           pip install demucs==4.0.1 --no-deps
       - run: pyinstaller packaging/stems4u.spec --noconfirm --distpath dist --workpath build
       - run: ditto -c -k --keepParent dist/STEMS4U.app STEMS4U-macOS-AppleSilicon.zip
@@ -90,7 +90,7 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: "3.11" }
       - run: |
-          pip install -r requirements.txt pyinstaller==6.11.1
+          pip install -r requirements.txt pyinstaller==6.11.1 "setuptools<80"
           pip install demucs==4.0.1 --no-deps
       - run: pyinstaller packaging/stems4u.spec --noconfirm --distpath dist --workpath build
       - run: Compress-Archive -Path dist\STEMS4U -DestinationPath STEMS4U-Windows.zip

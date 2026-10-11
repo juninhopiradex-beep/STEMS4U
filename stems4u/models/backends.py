@@ -64,6 +64,9 @@ class DemucsSeparator(Separator):
                 raise UserError("Pacote demucs em falta.", "pip install demucs==4.0.1 --no-deps",
                                 "demucs_missing") from exc
             dev = torch_device(self.device_pref)
+            # PyTorch >= 2.6 só carrega "weights_only" por defeito; os checkpoints do Demucs guardam a classe
+            # do modelo. Os ficheiros já foram verificados por hash no Model Manager, por isso é seguro.
+            os.environ.setdefault("TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD", "1")
             log.info("A carregar %s em %s", self.spec.id, dev)
             model = get_model(self.spec.demucs_name, repo=Path(self.spec.dir))
             model.to(dev).eval()
