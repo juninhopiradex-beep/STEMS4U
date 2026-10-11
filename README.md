@@ -57,7 +57,7 @@ python tools/benchmark.py bench/ --models htdemucs,htdemucs_ft --quality balance
 2. Em **Actions**, o workflow *Build STEMS4U* compila automaticamente:
    `STEMS4U-macOS-Intel.zip` (verificado para Catalina 10.15), `STEMS4U-macOS-AppleSilicon.zip`, `STEMS4U-Windows.zip`.
    Descarrega-os em Actions → última execução → *Artifacts*.
-3. Versão web: em **Settings → Pages**, escolhe *Source: GitHub Actions*. O workflow *Versão web* publica `ui/index.html`.
+3. Versão web: o `index.html` da raiz é a app (cópia de `ui/index.html` com o cabeçalho HTML). Em **Settings → Pages** basta *Deploy from a branch → main → / (root)*. Sempre que mudares `ui/index.html`, copia-o também para a raiz.
 4. Depois do primeiro build, copia os SHA-256 que aparecem no resumo do job *real-model* para o manifesto (ou corre `python tools/pin_models.py --write`). A partir daí, o verificador da build pública passa a verde.
 
 As apps não estão assinadas nem notarizadas: no Mac abre a primeira vez com botão direito → Abrir.

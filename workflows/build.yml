@@ -1,0 +1,99 @@
+name: Build STEMS4U
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  tests:
+    name: Testes do motor
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install numpy scipy soundfile pytest
+      - run: pytest -q
+      - name: Verificador de licenças (build pública, fail-closed)
+        # Fica a amarelo até fixares os SHA-256 com tools/pin_models.py --write
+        continue-on-error: true
+        run: python -m stems4u models check-public htdemucs,htdemucs_ft,htdemucs_6s
+
+  real-model:
+    name: Teste com HTDemucs real + hashes dos modelos
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: |
+          pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu
+          pip install numpy scipy soundfile pytest dora-search einops julius openunmix pyyaml tqdm
+          pip install demucs==4.0.1 --no-deps
+      - name: SHA-256 dos modelos (copia para o manifesto ou corre tools/pin_models.py --write)
+        run: python tools/pin_models.py | tee -a "$GITHUB_STEP_SUMMARY"
+      - run: STEMS4U_REAL=1 pytest -q -s tests/test_real_model.py
+
+  macos-intel:
+    name: macOS Intel (Catalina 10.15+)
+    runs-on: macos-15-intel
+    env:
+      MACOSX_DEPLOYMENT_TARGET: "10.15"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Python 3.11 do python.org (compatível com 10.9+)
+        run: |
+          curl -sSLo py.pkg https://www.python.org/ftp/python/3.11.9/python-3.11.9-macos11.pkg
+          sudo installer -pkg py.pkg -target /
+      - name: Dependências
+        run: |
+          /Library/Frameworks/Python.framework/Versions/3.11/bin/python3.11 -m venv .venv
+          source .venv/bin/activate
+          pip install -U pip
+          pip install -r requirements-macos-intel.txt pyinstaller==6.11.1
+          pip install demucs==4.0.1 --no-deps
+      - name: Empacotar
+        run: |
+          source .venv/bin/activate
+          pyinstaller packaging/stems4u.spec --noconfirm --distpath dist --workpath build
+      - name: Verificar que corre em macOS 10.15
+        run: bash packaging/check_macos_min.sh dist/STEMS4U.app 10.15
+      - name: Teste de arranque do executável
+        run: dist/STEMS4U.app/Contents/MacOS/STEMS4U info
+      - run: ditto -c -k --keepParent dist/STEMS4U.app STEMS4U-macOS-Intel.zip
+      - uses: actions/upload-artifact@v4
+        with: { name: STEMS4U-macOS-Intel, path: STEMS4U-macOS-Intel.zip }
+
+  macos-arm:
+    name: macOS Apple Silicon
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: |
+          pip install -r requirements.txt pyinstaller==6.11.1
+          pip install demucs==4.0.1 --no-deps
+      - run: pyinstaller packaging/stems4u.spec --noconfirm --distpath dist --workpath build
+      - run: dist/STEMS4U.app/Contents/MacOS/STEMS4U info
+      - run: ditto -c -k --keepParent dist/STEMS4U.app STEMS4U-macOS-AppleSilicon.zip
+      - uses: actions/upload-artifact@v4
+        with: { name: STEMS4U-macOS-AppleSilicon, path: STEMS4U-macOS-AppleSilicon.zip }
+
+  windows:
+    name: Windows 10/11
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: |
+          pip install -r requirements.txt pyinstaller==6.11.1
+          pip install demucs==4.0.1 --no-deps
+      - run: pyinstaller packaging/stems4u.spec --noconfirm --distpath dist --workpath build
+      - run: dist\STEMS4U\STEMS4U.exe info
+      - run: Compress-Archive -Path dist\STEMS4U -DestinationPath STEMS4U-Windows.zip
+        shell: pwsh
+      - uses: actions/upload-artifact@v4
+        with: { name: STEMS4U-Windows, path: STEMS4U-Windows.zip }
