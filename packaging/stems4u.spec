@@ -11,7 +11,8 @@ a = Analysis([str(ROOT / "packaging" / "launch.py")], pathex=[str(ROOT)],
                     (str(ROOT / "stems4u" / "models" / "manifest.json"), "stems4u/models"),
                     (str(ROOT / "THIRD_PARTY_NOTICES.md"), ".")],
              hiddenimports=hidden,
-             excludes=["tkinter", "matplotlib", "IPython", "pytest", "torch.utils.tensorboard", "caffe2"],
+             excludes=["tkinter", "matplotlib", "IPython", "pytest", "torch.utils.tensorboard", "caffe2",
+                       "pkg_resources", "setuptools"],  # não usados; o hook do pkg_resources falha com setuptools recente
              noarchive=False)
 # As bibliotecas de áudio que o torchaudio traz (sox, ffmpeg, flac…) exigem macOS 12 e não são usadas:
 # o STEMS4U lê e grava áudio com libsndfile. O torchaudio só é importado pelo filtro de Wiener do Demucs.
