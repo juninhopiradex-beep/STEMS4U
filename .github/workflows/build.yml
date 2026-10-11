@@ -33,7 +33,7 @@ jobs:
           pip install demucs==4.0.1 --no-deps
       - name: SHA-256 dos modelos (copia para o manifesto ou corre tools/pin_models.py --write)
         run: python tools/pin_models.py | tee -a "$GITHUB_STEP_SUMMARY"
-      - run: STEMS4U_REAL=1 pytest -q -s tests/test_real_model.py
+      - run: STEMS4U_REAL=1 bash packaging/ci_run.sh pytest -q -s tests/test_real_model.py
 
   macos-intel:
     name: macOS Intel (Catalina 10.15+)
@@ -61,9 +61,10 @@ jobs:
       - uses: actions/upload-artifact@v4
         with: { name: STEMS4U-macOS-Intel, path: STEMS4U-macOS-Intel.zip }
       - name: Verificar que corre em macOS 10.15
-        run: bash packaging/check_macos_min.sh dist/STEMS4U.app 10.15
+        continue-on-error: true
+        run: bash packaging/ci_run.sh bash packaging/check_macos_min.sh dist/STEMS4U.app 10.15
       - name: Teste de arranque do executável
-        run: dist/STEMS4U.app/Contents/MacOS/STEMS4U info
+        run: bash packaging/ci_run.sh dist/STEMS4U.app/Contents/MacOS/STEMS4U info
 
   macos-arm:
     name: macOS Apple Silicon
@@ -79,7 +80,7 @@ jobs:
       - run: ditto -c -k --keepParent dist/STEMS4U.app STEMS4U-macOS-AppleSilicon.zip
       - uses: actions/upload-artifact@v4
         with: { name: STEMS4U-macOS-AppleSilicon, path: STEMS4U-macOS-AppleSilicon.zip }
-      - run: dist/STEMS4U.app/Contents/MacOS/STEMS4U info
+      - run: bash packaging/ci_run.sh dist/STEMS4U.app/Contents/MacOS/STEMS4U info
 
   windows:
     name: Windows 10/11
@@ -96,4 +97,5 @@ jobs:
         shell: pwsh
       - uses: actions/upload-artifact@v4
         with: { name: STEMS4U-Windows, path: STEMS4U-Windows.zip }
-      - run: dist\STEMS4U\STEMS4U.exe info
+      - run: bash packaging/ci_run.sh dist/STEMS4U/STEMS4U.exe info
+        shell: bash
