@@ -1,0 +1,1088 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<title>STEMS4U by Piradex</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=Unbounded:wght@600;700&display=swap">
+<style>
+/* Studio Black — tema único e intencional (não segue o modo claro do sistema).
+   Layout: régie de estúdio — coluna de preparação à esquerda, mesa multipista à direita. */
+:root{
+  --bg:#08090B; --panel:#0F1114; --panel-2:#15181D; --line:#1F232A; --line-2:#2A2F38;
+  --fg:#EEF0F3; --fg-2:#A6ACB7; --fg-3:#7A818D;
+  --accent:#F4F5F7; --accent-ink:#0A0B0D; --accent-soft:rgba(255,255,255,.07);
+  --vocals:#FF5C8A; --drums:#FF9A3C; --bass:#8B7BFF; --music:#3CB4FF; --piano:#43D19E; --fx:#A7ADB8; --other:#737B8A;
+  --ok:#4ED68A; --warn:#F5C542; --bad:#FF5A5F; --bad-soft:rgba(255,90,95,.08);
+  --wave-bg:#0B0D10; --shadow:0 1px 0 rgba(255,255,255,.02) inset, 0 16px 40px rgba(0,0,0,.5);
+  --f-display:"Unbounded","Geist",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-body:"Geist",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"Geist Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --hdr-w:268px;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important} /* sem isto, .modal/.progress/.file-card ignoram o atributo hidden fora da pré-visualização */
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:13.5px/1.45 var(--f-body);-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+
+/* ---------- barra superior ---------- */
+.top{display:flex;align-items:center;gap:16px;padding:10px 20px;border-bottom:1px solid var(--line);background:var(--panel);
+  position:sticky;top:env(safe-area-inset-top,0px);z-index:20;flex-wrap:wrap}
+.brand{display:flex;align-items:baseline;gap:10px;min-width:0}
+.logo{font:700 19px/1 var(--f-display);letter-spacing:.02em;display:flex;align-items:center;gap:8px}
+.logo .bars{display:inline-flex;gap:2px;align-items:flex-end;height:16px}
+.logo .bars i{display:block;width:3px;border-radius:1px}
+.logo .four{color:inherit}
+.by{font-size:11px;color:var(--fg-3);letter-spacing:.14em;text-transform:uppercase}
+.top .spacer{flex:1}
+.chip{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:7px;border:1px solid var(--line);
+  background:var(--panel-2);color:var(--fg-2);font-size:12px;white-space:nowrap}
+button.chip:hover{border-color:var(--line-2);color:var(--fg)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--fg-3)}
+.dot.ok{background:var(--ok)} .dot.warn{background:var(--warn)}
+.top-song{display:flex;align-items:center;gap:10px;min-width:0}
+.top-song .sep{width:1px;height:22px;background:var(--line-2)}
+.top-song b{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:320px}
+
+/* ---------- layout ---------- */
+.app{display:grid;grid-template-columns:minmax(330px,390px) minmax(0,1fr);gap:16px;padding-block:16px;padding-inline:16px;max-width:1680px;margin:0 auto}
+@media (max-width:980px){.app{grid-template-columns:minmax(0,1fr)}}
+.col{display:flex;flex-direction:column;gap:12px;min-width:0}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);min-width:0}
+.sec{padding:16px;display:flex;flex-direction:column;gap:12px}
+.sec + .sec{border-top:1px solid var(--line)}
+.sec-h{display:flex;align-items:center;gap:8px;justify-content:space-between}
+.eyebrow{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--fg-3)}
+.eyebrow b{color:var(--fg-2);font-weight:700;margin-right:6px}
+.ghost{background:none;border:1px solid var(--line);border-radius:7px;padding:4px 10px;font-size:12px;color:var(--fg-2)}
+.ghost:hover{color:var(--fg);border-color:var(--line-2)}
+.ghost:disabled{opacity:.45;cursor:not-allowed}
+.muted{color:var(--fg-3);font-size:12px}
+
+/* drop */
+.drop{border:1.5px dashed var(--line-2);border-radius:10px;padding:20px 14px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px;
+  transition:border-color .15s,background .15s;background:var(--panel-2)}
+.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.drop strong{font-size:15px}
+.file-card{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel-2)}
+.file-ico{width:36px;height:36px;border-radius:8px;display:grid;place-items:center;background:var(--bg);border:1px solid var(--line);color:var(--fg-2)}
+.file-name{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.specs{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:11.5px;color:var(--fg-3)}
+
+/* seleção de stems */
+.fam{display:flex;flex-direction:column;gap:6px}
+.fam-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.stem{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:9px;padding:8px 10px;border-radius:9px;
+  border:1px solid var(--line);background:var(--panel-2);text-align:left;min-height:46px}
+.stem .sw{width:8px;height:26px;border-radius:3px;background:var(--c);opacity:.35}
+.stem .nm{font-weight:600;font-size:13px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stem .ht{font-size:11px;color:var(--fg-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stem .ck{width:18px;height:18px;border-radius:5px;border:1.5px solid var(--line-2);display:grid;place-items:center}
+.stem[aria-pressed="true"]{border-color:var(--c)}
+.stem[aria-pressed="true"] .sw{opacity:1}
+.stem[aria-pressed="true"] .ck{background:var(--c);border-color:var(--c)}
+.stem[aria-pressed="true"] .ck::after{content:"";width:8px;height:4px;border:2px solid var(--bg);border-top:0;border-right:0;transform:rotate(-45deg) translate(1px,-1px)}
+.stem.child{margin-left:14px}
+.stem:disabled{cursor:not-allowed;opacity:.5}
+.stem:disabled .ck{border-style:dashed}
+.stem.parent{grid-column:1/-1}
+.note{display:flex;gap:10px;padding:10px 12px;border-radius:9px;background:var(--panel-2);border:1px solid var(--line);font-size:12px;color:var(--fg-2)}
+.note b{color:var(--fg)}
+details.roadmap summary{cursor:pointer;font-size:12px;color:var(--fg-2);list-style:none;display:flex;justify-content:space-between}
+details.roadmap summary::-webkit-details-marker{display:none}
+details.roadmap ul{margin:8px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
+details.roadmap li{font-size:12px;color:var(--fg-3);padding-left:10px;border-left:2px solid var(--line-2)}
+details.roadmap li b{color:var(--fg-2);font-weight:600}
+
+/* segmented */
+.seg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--line);border-radius:9px;overflow:hidden;background:var(--panel-2)}
+.seg button{border:0;background:none;padding:8px 4px;font-size:12px;font-weight:600;color:var(--fg-2);position:relative;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.seg button .rec{position:absolute;top:3px;right:4px;width:5px;height:5px;border-radius:50%;background:var(--ok)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.row > *{min-width:0}
+select.sel{background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:7px 9px;font-size:12.5px;flex:1}
+.folder{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel-2)}
+.folder .p{font-size:11.5px;color:var(--fg-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;direction:rtl;text-align:left}
+.go{display:flex;align-items:center;justify-content:center;gap:10px;height:48px;border-radius:10px;border:0;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:15px;letter-spacing:.01em}
+.go:hover{filter:brightness(1.08)}
+.go:disabled{opacity:.4;cursor:not-allowed}
+.est{font-size:11.5px;color:var(--fg-3);text-align:center}
+
+/* ---------- direita ---------- */
+.result-h{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.result-h h1{margin:4px 0 0;font:600 20px/1.2 var(--f-display);letter-spacing:-.005em;text-wrap:balance}
+.badge{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;padding:3px 8px;border-radius:6px;background:var(--panel-2);border:1px solid var(--line);color:var(--fg-2)}
+.badge.warn{color:var(--warn);border-color:var(--warn)}
+.badge.ok{color:var(--ok)}
+.progress{display:flex;flex-direction:column;gap:8px;padding:12px 14px;border-radius:10px;background:var(--panel-2);border:1px solid var(--line)}
+.bar{height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .25s}
+.stages{display:flex;gap:6px;flex-wrap:wrap}
+.stages span{font-size:11px;padding:2px 8px;border-radius:5px;color:var(--fg-3);border:1px solid var(--line)}
+.stages span.on{color:var(--accent-ink);background:var(--accent);border-color:var(--accent)}
+.stages span.done{color:var(--fg-2)}
+.alert{padding:10px 12px;border-radius:9px;font-size:12.5px;border:1px solid var(--bad);background:var(--bad-soft)}
+.alert.info{border-color:var(--line);background:var(--panel-2)}
+.alert b{display:block;margin-bottom:2px}
+.facts{display:flex;gap:6px;flex-wrap:wrap}
+
+/* transporte */
+.transport{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 12px;border-bottom:1px solid var(--line)}
+.tbtn{height:34px;min-width:34px;padding:0 10px;border-radius:8px;border:1px solid var(--line);background:var(--panel-2);display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--fg-2)}
+.tbtn:hover{color:var(--fg);border-color:var(--line-2)}
+.tbtn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);min-width:42px}
+.tbtn[aria-pressed="true"]{color:var(--fg);border-color:var(--fg-2);background:var(--accent-soft)}
+.tbtn:disabled{opacity:.4;cursor:not-allowed}
+.tc{font:500 20px/1 var(--f-mono);letter-spacing:-.01em;font-variant-numeric:tabular-nums;padding:0 12px;min-width:150px}
+.tc .muted{font-size:13px}
+.tc small{display:block;font-size:10px;color:var(--fg-3);margin-top:3px}
+.transport .grow{flex:1}
+
+/* pistas */
+.tracks{position:relative;overflow-x:auto;overflow-y:visible}
+.tracks-inner{position:relative;min-width:100%}
+.trow{display:grid;grid-template-columns:var(--hdr-w) var(--lane-w,1fr);border-bottom:1px solid var(--line)}
+.trow:last-child{border-bottom:0}
+.thdr{position:sticky;left:0;z-index:3;background:var(--panel);border-right:1px solid var(--line);padding:8px 10px 8px 12px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 8px;align-items:center}
+.thdr::before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:3px;border-radius:0 2px 2px 0;background:var(--c)}
+.tname{display:flex;align-items:center;gap:6px;min-width:0}
+.tname span{font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tmeta{grid-column:1/-1;font:11px/1.2 var(--f-mono);color:var(--fg-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ms{display:flex;gap:4px}
+.ms button{width:24px;height:22px;border-radius:5px;border:1px solid var(--line);background:var(--panel-2);font-size:11px;font-weight:700;color:var(--fg-3);padding:0}
+.ms button.m[aria-pressed="true"]{background:var(--bad);border-color:var(--bad);color:#fff}
+.ms button.s[aria-pressed="true"]{background:var(--warn);border-color:var(--warn);color:#1b1503}
+.ms button.i[aria-pressed="true"]{color:var(--fg);border-color:var(--fg-2)}
+.faders{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr) 52px 56px;gap:8px;align-items:center}
+.faders output{font:10.5px var(--f-mono);color:var(--fg-2);text-align:right;font-variant-numeric:tabular-nums}
+input[type=range]{-webkit-appearance:none;appearance:none;background:transparent;width:100%;height:18px;margin:0}
+input[type=range]::-webkit-slider-runnable-track{height:3px;border-radius:2px;background:var(--line-2)}
+input[type=range]::-moz-range-track{height:3px;border-radius:2px;background:var(--line-2)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:var(--fg);margin-top:-4.5px;border:0}
+input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:var(--fg);border:0}
+.lane{position:relative;background:var(--wave-bg);min-height:76px;cursor:text}
+.lane canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.trow.off .lane canvas{opacity:.3}
+.trow.ruler .thdr{padding:6px 12px;display:flex;align-items:center;justify-content:space-between}
+.trow.ruler .lane{min-height:26px;background:var(--panel-2);cursor:pointer}
+.playhead{position:absolute;top:0;bottom:0;width:1px;background:var(--fg);z-index:2;pointer-events:none;transform:translateX(0)}
+.playhead::before{content:"";position:absolute;top:0;left:-5px;border:5px solid transparent;border-top:7px solid var(--fg)}
+.details{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:8px;padding:10px 12px;background:var(--panel-2);border-top:1px solid var(--line)}
+.details div{font-size:11px;color:var(--fg-3)}
+.details b{display:block;font:500 13px var(--f-mono);color:var(--fg);font-variant-numeric:tabular-nums}
+.empty{padding:40px 20px;text-align:center;color:var(--fg-3)}
+.empty strong{display:block;color:var(--fg-2);font-size:15px;margin-bottom:4px}
+.example-flag{font-size:11px;color:var(--warn)}
+.report{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.kv{padding:10px 12px;border-radius:9px;background:var(--panel-2);border:1px solid var(--line)}
+.kv span{display:block;font-size:11px;color:var(--fg-3);text-transform:uppercase;letter-spacing:.1em}
+.kv b{font:500 16px var(--f-mono);font-variant-numeric:tabular-nums}
+
+/* modal */
+.modal{position:fixed;inset:0;background:rgba(5,7,10,.6);display:grid;place-items:center;z-index:50;padding:16px}
+.modal-card{width:min(860px,100%);max-height:86vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+.modal-h{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel)}
+.modal-h h2{margin:0;font:600 16px var(--f-display)}
+.mlist{display:flex;flex-direction:column}
+.mitem{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 14px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.mitem h3{margin:0;font-size:14px}
+.mitem p{margin:0;font-size:12px;color:var(--fg-3)}
+.pill{display:inline-block;font-size:10.5px;padding:1px 7px;border-radius:999px;border:1px solid var(--line-2);color:var(--fg-2);margin-right:4px}
+.pill.ok{color:var(--ok);border-color:var(--ok)}
+.pill.warn{color:var(--warn);border-color:var(--warn)}
+.hwgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;padding:16px}
+.toast{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:9px;font-size:13px;z-index:60;max-width:calc(100% - 32px)}
+@media (max-width:640px){:root{--hdr-w:178px}.faders{grid-template-columns:minmax(0,1fr)}.faders output{display:none}.top{padding:10px 16px}.by{display:none}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<header class="top">
+  <div class="brand">
+    <div class="logo" aria-label="STEMS4U">
+      <span class="bars" aria-hidden="true"><i style="height:7px;background:var(--vocals)"></i><i style="height:15px;background:var(--drums)"></i><i style="height:10px;background:var(--bass)"></i><i style="height:13px;background:var(--music)"></i></span>
+      <span>STEMS<span class="four">4</span>U</span>
+    </div>
+    <span class="by">by Piradex</span>
+  </div>
+  <div class="top-song" id="topSong" hidden><span class="sep"></span><b id="topSongName"></b><span class="mono muted" id="topSongSpecs"></span></div>
+  <div class="spacer"></div>
+  <span class="chip" id="modeChip"><span class="dot" id="modeDot"></span><span id="modeTxt">A ligar…</span></span>
+  <button class="chip" id="hwChip" type="button" title="Hardware detectado">—</button>
+  <button class="chip" id="modelsBtn" type="button">Modelos</button>
+</header>
+
+<main class="app">
+  <!-- ======================= PREPARAÇÃO ======================= -->
+  <section class="col">
+    <div class="panel">
+      <div class="sec">
+        <div class="sec-h"><span class="eyebrow"><b>1</b>Mistura</span><span class="muted" id="fmtHint">WAV · AIFF · FLAC · MP3 · M4A</span></div>
+        <div class="drop" id="drop">
+          <svg width="34" height="34" viewBox="0 0 34 34" fill="none" aria-hidden="true"><g stroke="currentColor" stroke-width="2" stroke-linecap="round" style="color:var(--fg-2)"><path d="M5 17v0M9 12v10M13 7v20M17 11v12M21 4v26M25 10v14M29 15v4"/></g></svg>
+          <strong>Larga aqui a tua mistura</strong>
+          <span class="muted">Master estéreo ou mistura final. O original nunca é alterado.</span>
+          <div class="row" style="justify-content:center"><button class="ghost" id="chooseBtn" type="button">Escolher ficheiro</button><button class="ghost" id="openProjBtn" type="button" hidden>Abrir projecto .s4u</button></div>
+          <input type="file" id="fileInput" accept=".wav,.aif,.aiff,.flac,.mp3,.m4a,.aac,.ogg,audio/*" hidden>
+        </div>
+        <div class="file-card" id="fileCard" hidden>
+          <div class="file-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div>
+          <div style="min-width:0"><div class="file-name" id="fileName"></div><div class="specs mono" id="fileSpecs"></div></div>
+          <button class="ghost" id="clearFile" type="button" aria-label="Trocar ficheiro">Trocar</button>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-h"><span class="eyebrow"><b>2</b>O que extrair</span>
+          <div class="row"><button class="ghost" id="allBtn" type="button">Todas</button><button class="ghost" id="noneBtn" type="button">Nenhuma</button></div></div>
+        <div id="stemPicker" class="fam"></div>
+        <div class="note"><span aria-hidden="true">↳</span><span><b>Other</b> recebe tudo o que não seleccionares, para que a soma das pistas reconstrua a mistura. Quando pedes peças de bateria ou voz detalhada, a pista-mãe também é exportada mas começa em <b>M</b>, para não duplicar.</span></div>
+        <details class="roadmap" id="roadmap"><summary><span>Ainda sem modelo fiável</span><span id="roadmapCount" class="mono"></span></summary><ul id="roadmapList"></ul></details>
+      </div>
+
+      <div class="sec">
+        <div class="sec-h"><span class="eyebrow"><b>3</b>Qualidade e formato</span><span class="muted" id="recTxt"></span></div>
+        <div class="seg" id="qualSeg" role="group" aria-label="Qualidade">
+          <button type="button" data-q="fast">Rápido</button><button type="button" data-q="balanced">Equilibrado</button>
+          <button type="button" data-q="high">Alta</button><button type="button" data-q="ultra">Ultra</button>
+        </div>
+        <div class="row">
+          <select class="sel" id="fmtSel" aria-label="Formato de exportação">
+            <option value="wav24">WAV 24-bit</option><option value="wav32f">WAV 32-bit float</option><option value="wav16">WAV 16-bit (dither)</option>
+            <option value="aiff24">AIFF 24-bit</option><option value="flac24">FLAC 24-bit</option>
+          </select>
+          <select class="sel" id="prevSel" aria-label="Duração a processar">
+            <option value="0">Música completa</option><option value="10">Pré-escuta 10 s</option><option value="30">Pré-escuta 30 s</option><option value="60">Pré-escuta 60 s</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-h"><span class="eyebrow"><b>4</b>Pasta de trabalho</span></div>
+        <div class="folder">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--fg-3)"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+          <div style="min-width:0"><div id="folderName" style="font-weight:600;font-size:13px">Nenhuma pasta escolhida</div><div class="p" id="folderPath">Os stems são gravados apenas onde escolheres.</div></div>
+          <button class="ghost" id="folderBtn" type="button">Escolher</button>
+        </div>
+        <button class="go" id="goBtn" type="button" disabled>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 12h3M17 12h3M12 4v3M12 17v3M7 7l2 2M15 15l2 2M17 7l-2 2M9 15l-2 2"/></svg>
+          Separar e exportar</button>
+        <div class="est" id="estTxt">Carrega uma mistura para começar.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= RESULTADO / MESA ======================= -->
+  <section class="col">
+    <div class="panel">
+      <div class="sec">
+        <div class="result-h">
+          <div><div class="eyebrow">Resultado</div><h1 id="resTitle">Pronto para separar</h1></div>
+          <div class="row"><button class="ghost" id="importStemsBtn" type="button">Abrir stems…</button><button class="ghost" id="revealBtn" type="button" hidden>Abrir pasta</button><button class="ghost" id="dlBtn" type="button" hidden>Guardar stems</button></div>
+          <input type="file" id="stemsInput" accept="audio/*,.wav,.aif,.aiff,.flac" multiple hidden>
+        </div>
+        <div class="progress" id="progBox" hidden>
+          <div class="row" style="justify-content:space-between"><strong id="progMsg">—</strong><span class="mono muted" id="progPct">0%</span></div>
+          <div class="bar"><i id="progBar"></i></div>
+          <div class="row" style="justify-content:space-between"><div class="stages" id="stages"><span data-s="import">Importação</span><span data-s="separate">Separação</span><span data-s="reconstruct">Reconstrução</span><span data-s="export">Exportação</span></div>
+            <div class="row"><span class="mono muted" id="progTime"></span><button class="ghost" id="cancelBtn" type="button">Cancelar</button></div></div>
+          <div class="muted" id="progModel"></div>
+        </div>
+        <div id="alerts" class="col" style="gap:8px"></div>
+        <div class="facts" id="facts"></div>
+      </div>
+
+      <div class="transport" id="transport">
+        <button class="tbtn primary" id="playBtn" type="button" aria-label="Reproduzir" title="Reproduzir / pausa (Espaço)">
+          <svg id="playIco" width="14" height="14" viewBox="0 0 14 14"><path d="M3 1.5v11l9-5.5z" fill="currentColor"/></svg></button>
+        <button class="tbtn" id="stopBtn" type="button" title="Parar e voltar ao início" aria-label="Parar"><svg width="12" height="12" viewBox="0 0 12 12"><rect x="1.5" y="1.5" width="9" height="9" rx="1" fill="currentColor"/></svg></button>
+        <button class="tbtn" id="loopBtn" type="button" aria-pressed="false" title="Repetir">Loop</button>
+        <div class="tc" aria-live="off"><span id="tcNow">00:00.000</span> <span class="muted">/ <span id="tcDur">00:00.000</span></span><small id="tcSmp">0 smp</small></div>
+        <div class="grow"></div>
+        <button class="tbtn" id="zoomOut" type="button" aria-label="Menos zoom">−</button>
+        <span class="mono muted" id="zoomTxt">1×</span>
+        <button class="tbtn" id="zoomIn" type="button" aria-label="Mais zoom">+</button>
+        <button class="tbtn" id="exportMixBtn" type="button" title="Exporta a mistura com o volume, pan, mute e solo actuais">Exportar mistura</button>
+      </div>
+      <div class="tracks" id="tracks"><div class="tracks-inner" id="tracksInner"></div></div>
+    </div>
+
+    <div class="panel" id="reportPanel" hidden>
+      <div class="sec">
+        <div class="sec-h"><span class="eyebrow">Relatório</span><span class="muted" id="repTime"></span></div>
+        <div class="report" id="report"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="modal" id="modal" hidden><div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal-h"><h2 id="modalTitle"></h2><button class="ghost" id="modalClose" type="button">Fechar</button></div>
+  <div id="modalBody"></div></div></div>
+
+<script>
+"use strict";
+/* =====================================================================
+   STEMS4U by Piradex — interface (vanilla JS, sem build)
+   Modo "motor": app desktop, fala com o motor local via /api (token).
+   Modo "web":   GitHub Pages, separa 4 stems no browser (HTDemucs ONNX, WebGPU/WASM).
+   ===================================================================== */
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
+// ORT 1.20.1: o WebGPU das versões 1.22+ exige APIs do Chrome 13x (falha em Macs com Catalina/Chrome antigo).
+const ORT_VER = "1.20.1", DEMUCS_WEB_VER = "1.0.2";
+
+const FAM_COLOR = {vocals:"--vocals", drums:"--drums", bass:"--bass", music:"--music", fx:"--fx", other:"--other"};
+const STEM_COLOR = {piano:"--piano"};
+const colorOf = (id, fam) => `var(${STEM_COLOR[id] || FAM_COLOR[fam] || "--other"})`;
+const tokenColor = (id, fam) => getComputedStyle(document.documentElement).getPropertyValue(STEM_COLOR[id] || FAM_COLOR[fam] || "--other").trim() || "#888";
+const QUAL_LABEL = {fast:"Rápido", balanced:"Equilibrado", high:"Alta", ultra:"Ultra"};
+const STAGE_LABEL = {queued:"Em fila", import:"Importação", separate:"Separação", reconstruct:"Reconstrução", export:"Exportação", done:"Concluído", failed:"Falhou", cancelled:"Cancelado", model:"Modelo"};
+
+// Catálogo usado no modo web (o motor desktop envia o seu via /api/info)
+const WEB_CATEGORIES = [
+  {id:"vocals",label:"Voz",family:"vocals",parent:null,hint:"Toda a voz",available:true},
+  {id:"lead_vocal",label:"Voz principal",family:"vocals",parent:"vocals",hint:"Voz à frente",available:false,reason:"Disponível na app desktop."},
+  {id:"backing_vocals",label:"Coros e segundas vozes",family:"vocals",parent:"vocals",hint:"Harmonias",available:false,reason:"Disponível na app desktop."},
+  {id:"drums",label:"Bateria",family:"drums",parent:null,hint:"Bateria completa",available:true},
+  {id:"kick",label:"Bombo",family:"drums",parent:"drums",hint:"Kick",available:false,reason:"Disponível na app desktop."},
+  {id:"snare",label:"Tarola",family:"drums",parent:"drums",hint:"Snare",available:false,reason:"Disponível na app desktop."},
+  {id:"toms",label:"Timbalões",family:"drums",parent:"drums",hint:"Toms",available:false,reason:"Disponível na app desktop."},
+  {id:"cymbals",label:"Pratos",family:"drums",parent:"drums",hint:"Crash, ride, hi-hat",available:false,reason:"Disponível na app desktop."},
+  {id:"bass",label:"Baixo",family:"bass",parent:null,hint:"Baixo e 808",available:true},
+  {id:"guitar",label:"Guitarra",family:"music",parent:null,hint:"Acústica e eléctrica",available:false,reason:"Disponível na app desktop."},
+  {id:"piano",label:"Piano e teclados",family:"music",parent:null,hint:"Piano, Rhodes",available:false,reason:"Disponível na app desktop."},
+];
+const WEB_ROADMAP = [
+  {label:"Percussão africana (congas, djembé, shakers…)",reason:"Sem modelo aberto treinado nestes instrumentos; plano de dataset próprio."},
+  {label:"Synth / Pads, Cordas, Metais",reason:"Modelos existentes com licença dos pesos por confirmar."},
+  {label:"Sub-bass / 808",reason:"Planeado como divisão por banda, não como separação de fonte."},
+  {label:"Clap, Ad-libs, Ambiência global",reason:"Sem modelo fiável."},
+];
+
+const S = {
+  mode: "web", token: null, info: null, cats: WEB_CATEGORIES, roadmap: WEB_ROADMAP,
+  file: null, selected: new Set(["vocals","drums","bass"]), quality: "balanced", rec: "balanced",
+  outdir: null, dirHandle: null, job: null, es: null, result: null, example: false, webStems: null,
+};
+const store = {get(k,d){try{const v=localStorage.getItem("s4u."+k);return v==null?d:JSON.parse(v)}catch(e){return d}},
+               set(k,v){try{localStorage.setItem("s4u."+k,JSON.stringify(v))}catch(e){}}};
+
+/* ------------------------------------------------------------------ util */
+function fmtTime(s){ s = Math.max(0,s||0); const m=Math.floor(s/60), r=s-m*60; return String(m).padStart(2,"0")+":"+r.toFixed(3).padStart(6,"0"); }
+function fmtDur(s){ const m=Math.floor(s/60), r=Math.round(s%60); return m+":"+String(r).padStart(2,"0"); }
+function db(x){ return x>0 ? 20*Math.log10(x) : -Infinity; }
+function fmtDb(x,d=1){ return Number.isFinite(x) ? (x>0?"+":"")+x.toFixed(d) : "−∞"; }
+function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+let toastT; function toast(msg){ let t=$(".toast"); if(!t){t=document.createElement("div");t.className="toast";document.body.appendChild(t);} t.textContent=msg; t.hidden=false; clearTimeout(toastT); toastT=setTimeout(()=>t.hidden=true,3200); }
+function alertBox(title, hint, kind){ const d=document.createElement("div"); d.className="alert"+(kind==="info"?" info":""); d.innerHTML=`<b>${esc(title)}</b>${esc(hint||"")}`; $("#alerts").appendChild(d); return d; }
+function clearAlerts(){ $("#alerts").innerHTML=""; }
+
+async function api(path, opts={}){
+  const headers = Object.assign({"X-S4U-Token": S.token}, opts.json ? {"Content-Type":"application/json"} : {}, opts.headers||{});
+  const r = await fetch(path, {method: opts.method || (opts.json||opts.body ? "POST" : "GET"), headers,
+                               body: opts.json ? JSON.stringify(opts.json) : opts.body});
+  const data = await r.json().catch(()=>({message:"Resposta inválida do motor"}));
+  if(!r.ok){ const e = new Error(data.message||"Erro"); e.hint = data.hint||""; throw e; }
+  return data;
+}
+
+/* ------------------------------------------------------------------ arranque */
+async function boot(){
+  S.token = new URLSearchParams(location.search).get("t");
+  if(S.token){
+    try { S.info = await api("/api/info"); S.mode = "engine"; } catch(e){ S.mode = "web"; }
+  }
+  if(S.mode === "engine"){
+    S.cats = S.info.categories; S.roadmap = S.info.roadmap;
+    S.rec = S.info.hardware.recommendation.quality;
+    $("#modeTxt").textContent = "Motor local · " + (S.info.build === "public" ? "build pública" : "build de desenvolvimento");
+    $("#modeDot").className = "dot ok";
+    const hw = S.info.hardware;
+    $("#hwChip").textContent = (hw.device === "cpu" ? "CPU" : hw.device.toUpperCase()) + " · " + (hw.gpu || hw.cpu || "").replace(/\(R\)|\(TM\)|CPU|@.*$/g,"").trim().slice(0,26) + (hw.ram_gb ? " · "+hw.ram_gb+" GB" : "");
+    $("#openProjBtn").hidden = false;
+    S.selected = new Set([...S.selected].filter(id => (S.cats.find(c=>c.id===id)||{}).available));
+  } else {
+    S.rec = "balanced";
+    $("#modeTxt").textContent = "Modo web · 4 stems no browser";
+    $("#modeDot").className = "dot warn";
+    $("#hwChip").textContent = ("gpu" in navigator) ? "WebGPU disponível" : "WASM (sem WebGPU)";
+    $("#modelsBtn").textContent = "Sobre o modo web";
+    $("#fmtSel").querySelectorAll("option").forEach(o => { if(!/^wav(24|32f|16)$/.test(o.value)) o.disabled = true; });
+  }
+  S.quality = store.get("quality", S.rec);
+  if(S.mode === "web") S.quality = "balanced";
+  $("#fmtSel").value = store.get("fmt", "wav24");
+  if(S.mode === "web" && !/^wav/.test($("#fmtSel").value)) $("#fmtSel").value = "wav24";
+  const od = store.get("outdir", null); if(S.mode === "engine" && od){ setFolder(od); }
+  renderPicker(); renderQuality(); bindUI(); updateGo();
+  if(S.mode === "web") loadExampleSession();
+  if(S.mode === "engine" && !S.info.models.some(m => m.usable)) firstRun();
+  renderTracks();
+}
+function firstRun(){
+  const box = alertBox("Primeira utilização: instala os modelos base.", "HTDemucs (Voz, Bateria, Baixo) e HTDemucs 6 stems (Guitarra, Piano), licença MIT, ≈135 MB. Fica guardado neste computador; a separação nunca descarrega nada a meio.", "info");
+  const b = document.createElement("button"); b.className = "ghost"; b.type = "button"; b.style.marginTop = "8px"; b.textContent = "Instalar modelos base";
+  b.onclick = async () => { b.disabled = true;
+    try { for(const id of ["htdemucs","htdemucs_6s"]){ b.textContent = "A descarregar " + id + "…"; await api("/api/models/install", {json:{id}}); }
+      await refreshInfo(); ["vocals","drums","bass"].forEach(s => S.selected.add(s)); renderPicker(); updateGo(); box.remove(); toast("Modelos instalados");
+    } catch(e){ b.disabled = false; b.textContent = "Tentar de novo"; alertBox(e.message, e.hint); } };
+  box.appendChild(b);
+}
+
+/* ------------------------------------------------------------------ selector de stems */
+function renderPicker(){
+  const host = $("#stemPicker"); host.innerHTML = "";
+  const roots = S.cats.filter(c => !c.parent);
+  const famGroups = {};
+  roots.forEach(r => { (famGroups[r.family] = famGroups[r.family] || []).push(r); });
+  const btn = (c, cls) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "stem " + cls; b.dataset.id = c.id; b.style.setProperty("--c", colorOf(c.id, c.family));
+    b.setAttribute("aria-pressed", S.selected.has(c.id) ? "true" : "false");
+    b.disabled = !c.available; if(!c.available) b.title = c.reason || "Indisponível";
+    b.innerHTML = `<span class="sw"></span><span style="min-width:0"><span class="nm" style="display:block">${esc(c.label)}</span><span class="ht" style="display:block">${esc(c.available ? c.hint : (c.reason||"Indisponível"))}</span></span><span class="ck"></span>`;
+    b.addEventListener("click", () => { S.selected.has(c.id) ? S.selected.delete(c.id) : S.selected.add(c.id); b.setAttribute("aria-pressed", S.selected.has(c.id)); updateGo(); });
+    return b;
+  };
+  for(const fam of Object.keys(famGroups)){
+    const box = document.createElement("div"); box.className = "fam";
+    const singles = [];
+    famGroups[fam].forEach(r => {
+      const kids = S.cats.filter(c => c.parent === r.id || (S.cats.find(p=>p.id===c.parent)||{}).parent === r.id);
+      if(kids.length){
+        box.appendChild(btn(r, "parent"));
+        const grid = document.createElement("div"); grid.className = "fam-row";
+        kids.forEach(k => grid.appendChild(btn(k, "child")));
+        box.appendChild(grid);
+      } else singles.push(r);
+    });
+    if(singles.length){ const grid = document.createElement("div"); grid.className = "fam-row"; singles.forEach(r => grid.appendChild(btn(r, ""))); box.appendChild(grid); }
+    host.appendChild(box);
+  }
+  $("#roadmapCount").textContent = S.roadmap.length;
+  $("#roadmapList").innerHTML = S.roadmap.map(r => `<li><b>${esc(r.label)}</b> — ${esc(r.reason)}</li>`).join("");
+}
+
+function renderQuality(){
+  $$("#qualSeg button").forEach(b => {
+    b.setAttribute("aria-pressed", b.dataset.q === S.quality);
+    b.innerHTML = QUAL_LABEL[b.dataset.q] + (b.dataset.q === S.rec ? '<span class="rec" title="Recomendado para este computador"></span>' : "");
+    b.disabled = S.mode === "web" && b.dataset.q !== "balanced";
+  });
+  $("#recTxt").textContent = S.mode === "engine" ? "● recomendado: " + QUAL_LABEL[S.rec] : "HTDemucs no browser";
+}
+
+function estimate(){
+  if(!S.file) return "Carrega uma mistura para começar.";
+  const dur = (+$("#prevSel").value) || S.file.duration;
+  let rt = {fast:.35, balanced:.6, high:2.4, ultra:6}[S.quality];
+  const sel = [...S.selected];
+  if(sel.some(s => ["kick","snare","toms","cymbals"].includes(s))) rt += .5;
+  if(sel.some(s => ["lead_vocal","backing_vocals"].includes(s))) rt += 6;
+  if(S.mode === "engine"){ const d = S.info.hardware.device; if(d === "cuda") rt /= 12; else if(d === "mps") rt /= 4; }
+  else rt = ("gpu" in navigator) ? .5 : 3;
+  const sec = dur * rt;
+  return "Estimativa: " + (sec < 90 ? Math.max(5, Math.round(sec)) + " s" : "≈ " + Math.round(sec/60) + " min") + " · " + sel.length + " pista(s) + Other";
+}
+
+function updateGo(){
+  const busy = S.job && !["completed","failed","cancelled"].includes(S.job.status);
+  const ok = S.file && S.selected.size && (S.mode === "web" || S.outdir) && !busy;
+  $("#goBtn").disabled = !ok;
+  $("#estTxt").textContent = !S.file ? "Carrega uma mistura para começar." : (S.mode === "engine" && !S.outdir) ? "Escolhe a pasta de trabalho antes de separar." : !S.selected.size ? "Escolhe pelo menos um instrumento." : estimate();
+}
+
+function setFolder(path){
+  S.outdir = path; store.set("outdir", path);
+  $("#folderName").textContent = path.split(/[\\/]/).filter(Boolean).pop() || path;
+  $("#folderPath").textContent = path;
+  updateGo();
+}
+
+/* ------------------------------------------------------------------ ficheiro de entrada */
+async function setInputFile(file){
+  clearAlerts();
+  try {
+    if(S.mode === "engine"){
+      $("#estTxt").textContent = "A importar…";
+      const info = await api("/api/upload?name=" + encodeURIComponent(file.name), {body: file, headers: {"Content-Type":"application/octet-stream"}});
+      showFile(info);
+    } else {
+      const buf = await file.arrayBuffer();
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const ab = await ctx.decodeAudioData(buf.slice(0));
+      ctx.close();
+      S.webFile = file;
+      showFile({name: file.name.replace(/\.[^.]+$/,""), path: null, format: (file.name.split(".").pop()||"").toLowerCase(),
+                sample_rate: ab.sampleRate, channels: ab.numberOfChannels, duration: ab.duration, bit_depth: null});
+    }
+  } catch(e){ alertBox("Não foi possível abrir o ficheiro.", e.hint || "O ficheiro pode estar corrompido ou usar um codec não suportado."); updateGo(); }
+}
+async function pickInputNative(){
+  try { const r = await api("/api/pick", {json:{kind:"file"}}); if(!r.path) return;
+    const info = await api("/api/probe", {json:{path:r.path}}); showFile(info);
+  } catch(e){ alertBox(e.message, e.hint); }
+}
+function showFile(info){
+  S.file = info;
+  $("#drop").hidden = true; $("#fileCard").hidden = false;
+  $("#fileName").textContent = info.title || info.name;
+  const bits = info.bit_depth ? info.bit_depth + "-bit" : "";
+  $("#fileSpecs").innerHTML = [String(info.format).toUpperCase(), (info.sample_rate/1000).toFixed(1).replace(".0","") + " kHz", bits, info.channels === 1 ? "mono" : "estéreo", fmtDur(info.duration)].filter(Boolean).map(esc).map(x=>`<span>${x}</span>`).join("");
+  $("#topSong").hidden = false; $("#topSongName").textContent = info.title || info.name;
+  $("#topSongSpecs").textContent = [String(info.format).toUpperCase(), (info.sample_rate/1000).toFixed(1).replace(".0","") + " kHz", info.bit_depth ? info.bit_depth + "-bit" : "", fmtDur(info.duration)].filter(Boolean).join(" · ");
+  if(S.mode === "web" && info.sample_rate !== 44100) alertBox("Modo web trabalha a 44,1 kHz.", "A app desktop preserva a taxa original (48, 88,2, 96 e 192 kHz).", "info");
+  updateGo();
+}
+
+/* ------------------------------------------------------------------ separação: motor local */
+async function runEngine(){
+  clearAlerts();
+  const body = {input: S.file.path, stems: [...S.selected], outdir: S.outdir, quality: S.quality, fmt: $("#fmtSel").value,
+                preview_seconds: (+$("#prevSel").value) || null};
+  try { S.job = await api("/api/jobs", {json: body}); } catch(e){ alertBox(e.message, e.hint); return; }
+  startProgress();
+  const es = new EventSource(`/api/jobs/${S.job.id}/events?t=${encodeURIComponent(S.token)}`);
+  S.es = es;
+  es.onmessage = ev => onProgress(JSON.parse(ev.data));
+  es.addEventListener("end", async ev => {
+    es.close(); const snap = JSON.parse(ev.data); S.job = snap; updateGo();
+    if(snap.status === "completed"){ await loadEngineResult(snap.result); }
+    else if(snap.status === "failed"){ $("#progBox").hidden = true; $("#resTitle").textContent = "A separação falhou"; alertBox(snap.error.message, snap.error.hint); }
+    else { $("#progBox").hidden = true; $("#resTitle").textContent = "Separação cancelada"; }
+  });
+  es.onerror = () => { /* o browser volta a ligar sozinho; o estado final chega pelo evento end */ };
+}
+
+let progT0 = 0, progTimer = 0;
+function startProgress(){
+  $("#progBox").hidden = false; $("#resTitle").textContent = "A separar…"; progT0 = performance.now();
+  $$("#stages span").forEach(s => s.className = ""); onProgress({stage:"import", progress:0, message:"A preparar"});
+  clearInterval(progTimer); progTimer = setInterval(() => { $("#progTime").textContent = fmtDur((performance.now()-progT0)/1000); }, 500);
+  updateGo();
+}
+function onProgress(e){
+  const pct = Math.round((e.progress||0)*100);
+  $("#progBar").style.width = pct + "%"; $("#progPct").textContent = pct + "%";
+  $("#progMsg").textContent = e.message || STAGE_LABEL[e.stage] || "";
+  if(e.model) $("#progModel").textContent = "Modelo: " + e.model + (e.stems ? " → " + e.stems.join(", ") : "") + (e.cached ? " (cache)" : "");
+  const order = ["import","separate","reconstruct","export"]; const i = order.indexOf(e.stage);
+  if(i >= 0) $$("#stages span").forEach((s,j) => s.className = j < i ? "done" : j === i ? "on" : "");
+  if(["done","failed","cancelled"].includes(e.stage)){ clearInterval(progTimer); if(e.stage==="done") $$("#stages span").forEach(s=>s.className="done"); }
+}
+
+async function loadEngineResult(res){
+  $("#progMsg").textContent = "A carregar pistas no mixer…";
+  S.result = res; S.example = false;
+  const sr = res.report.sample_rate;
+  const tracks = [];
+  for(const t of res.tracks){
+    const r = await fetch("/api/file?path=" + encodeURIComponent(t.file) + "&t=" + encodeURIComponent(S.token));
+    const buf = await decodeAt(await r.arrayBuffer(), sr);
+    tracks.push(makeTrack({id:t.id, label:t.label, family:t.family, buffer:buf, muted:t.muted, metrics:t.metrics, presence:t.presence_db, file:t.file}));
+  }
+  setTracks(tracks, sr);
+  $("#progBox").hidden = true;
+  $("#resTitle").textContent = "A exportação está pronta";
+  $("#revealBtn").hidden = false;
+  showReport(res.report, res.outdir);
+}
+
+/* ------------------------------------------------------------------ separação: modo web */
+let webProc = null;
+let webBuf = null;
+async function loadWebModel(onPct, useGpu){
+  const ort = await import(`https://cdn.jsdelivr.net/npm/onnxruntime-web@${ORT_VER}/dist/ort.webgpu.min.mjs`);
+  ort.env.wasm.wasmPaths = `https://cdn.jsdelivr.net/npm/onnxruntime-web@${ORT_VER}/dist/`;
+  ort.env.wasm.proxy = false;
+  const mod = await import(`https://cdn.jsdelivr.net/npm/demucs-web@${DEMUCS_WEB_VER}/src/index.js`);
+  const url = mod.CONSTANTS.DEFAULT_MODEL_URL;
+  let buf = webBuf, cache = null;
+  if(!buf) try { cache = await caches.open("stems4u-models-v1"); const hit = await cache.match(url); if(hit) buf = await hit.arrayBuffer(); } catch(e){}
+  if(!buf){
+    const r = await fetch(url); if(!r.ok) throw new Error("Não foi possível descarregar o modelo (" + r.status + ").");
+    const total = +r.headers.get("Content-Length") || 172e6; const reader = r.body.getReader(); const parts = []; let got = 0;
+    for(;;){ const {done, value} = await reader.read(); if(done) break; parts.push(value); got += value.length; onPct(got/total); }
+    const blob = new Blob(parts); buf = await blob.arrayBuffer();
+    try { if(cache) await cache.put(url, new Response(blob)); } catch(e){}
+  }
+  webBuf = buf;
+  const proc = new mod.DemucsProcessor({ort, sessionOptions:{executionProviders: useGpu ? ["webgpu","wasm"] : ["wasm"]}});
+  await proc.loadModel(buf.slice(0));
+  proc.usesGpu = useGpu;
+  return proc;
+}
+async function runWeb(){
+  clearAlerts(); S.job = {status:"processing"}; startProgress();
+  try {
+    onProgress({stage:"import", progress:.02, message:"A descodificar a mistura"});
+    const ctx = new (window.AudioContext || window.webkitAudioContext)({sampleRate:44100});
+    const mixBuf = await ctx.decodeAudioData((await S.webFile.arrayBuffer()).slice(0)); ctx.close();
+    let L = mixBuf.getChannelData(0), R = mixBuf.numberOfChannels > 1 ? mixBuf.getChannelData(1) : mixBuf.getChannelData(0);
+    const prev = +$("#prevSel").value;
+    if(prev){ const n = prev*44100, s = Math.max(0, Math.min(Math.floor(L.length*.3), L.length-n)); L = L.slice(s, s+n); R = R.slice(s, s+n); }
+    const dl = p => onProgress({stage:"import", progress:.05 + p*.2, message:"A descarregar o modelo " + Math.round(p*100) + "%", model:"HTDemucs v4 (ONNX)"});
+    const attach = () => { webProc.onProgress = ({progress}) => onProgress({stage:"separate", progress:.25 + progress*.65, message:"A separar no " + (webProc.usesGpu ? "GPU (WebGPU)" : "CPU (WASM) — mais lento"), model:"HTDemucs v4 (ONNX)"}); };
+    let out;
+    try {
+      if(!webProc){
+        onProgress({stage:"import", progress:.05, message:"A carregar o modelo HTDemucs (≈172 MB, fica em cache)", model:"HTDemucs v4 (ONNX)"});
+        webProc = await loadWebModel(dl, ("gpu" in navigator) && !S.noWebGpu);
+      }
+      attach(); out = await webProc.separate(L, R);
+    } catch(gpuErr){
+      if(!webProc || !webProc.usesGpu) throw gpuErr;
+      console.warn("WebGPU falhou, a usar WASM:", gpuErr);
+      S.noWebGpu = true; webProc = null;
+      onProgress({stage:"import", progress:.2, message:"WebGPU indisponível neste browser — a mudar para CPU", model:"HTDemucs v4 (ONNX)"});
+      webProc = await loadWebModel(dl, false);
+      attach(); out = await webProc.separate(L, R);
+    }
+    onProgress({stage:"reconstruct", progress:.92, message:"A calcular Other"});
+    const sel = [...S.selected].filter(s => out[s]);
+    const n = L.length, oL = new Float32Array(L), oR = new Float32Array(R);
+    for(const s of sel){ const st = out[s]; for(let i=0;i<n;i++){ oL[i] -= st.left[i]; oR[i] -= st.right[i]; } }
+    const parts = sel.map(s => ({id:s, l:out[s].left, r:out[s].right})).concat([{id:"other", l:oL, r:oR}]);
+    const tracks = parts.map(p => {
+      const c = WEB_CATEGORIES.find(c=>c.id===p.id) || {label:"Other", family:"other"};
+      const ab = new AudioBuffer({length:n, numberOfChannels:2, sampleRate:44100});
+      ab.copyToChannel(p.l, 0); ab.copyToChannel(p.r, 1);
+      return makeTrack({id:p.id, label:c.label, family:c.family, buffer:ab});
+    });
+    tracks.forEach(t => t.metrics = jsMetrics(t.buffer));
+    S.example = false; setTracks(tracks, 44100);
+    onProgress({stage:"export", progress:.96, message:"A gravar"});
+    S.webStems = tracks;
+    if(S.dirHandle) await saveWebStems();
+    onProgress({stage:"done", progress:1, message:"Concluído"});
+    S.job = {status:"completed"}; $("#progBox").hidden = true;
+    $("#resTitle").textContent = S.dirHandle ? "Stems gravados na pasta" : "Separação concluída";
+    $("#dlBtn").hidden = !!S.dirHandle;
+    const rec = reconstructionPct(tracks, L, R);
+    showReport({sample_rate:44100, frames:n, final_reconstruction:{accuracy_pct:rec}, plan:[{model:"HTDemucs v4 (ONNX, browser)"}], dropped:[], warnings:[]}, S.dirHandle ? S.dirHandle.name : null);
+  } catch(e){
+    console.error(e); S.job = {status:"failed"}; $("#progBox").hidden = true; $("#resTitle").textContent = "A separação falhou";
+    alertBox("Não foi possível separar no browser.", (e && e.message ? e.message + " " : "") + "Experimenta no Chrome/Edge recente ou usa a app desktop.");
+  }
+  clearInterval(progTimer); updateGo();
+}
+function reconstructionPct(tracks, L, R){
+  let em=0, ee=0; const n=L.length; const ls = tracks.map(t=>t.buffer.getChannelData(0)), rs = tracks.map(t=>t.buffer.getChannelData(1));
+  for(let i=0;i<n;i+=7){ let sl=0, sr=0; for(let k=0;k<ls.length;k++){ sl+=ls[k][i]; sr+=rs[k][i]; } em += L[i]*L[i]+R[i]*R[i]; ee += (L[i]-sl)**2+(R[i]-sr)**2; }
+  return em ? Math.max(0, 1-ee/em)*100 : 100;
+}
+async function saveWebStems(){
+  const song = (S.file && S.file.name || "Mistura").replace(/[^\w\- ]+/g,"_");
+  const fmt = $("#fmtSel").value;
+  for(const [i,t] of S.webStems.entries()){
+    const blob = encodeWav(t.buffer, fmt);
+    const name = `${String(i+1).padStart(2,"0")}_${song}_${fileLabel(t.id)}.wav`;
+    await deliverBlob(blob, name);
+  }
+}
+function fileLabel(id){ return ({vocals:"Vocals",drums:"Drums",bass:"Bass",other:"Other",lead_vocal:"LeadVocal",backing_vocals:"BackingVocals",kick:"Kick",snare:"Snare",toms:"Toms",cymbals:"Cymbals",guitar:"Guitar",piano:"Piano"})[id] || id; }
+async function deliverBlob(blob, name){
+  if(S.mode === "engine"){
+    const r = await api(`/api/save?dir=${encodeURIComponent(S.result ? S.result.outdir : S.outdir)}&name=${encodeURIComponent(name)}`, {body: blob, headers:{"Content-Type":"application/octet-stream"}});
+    return r.path;
+  }
+  if(S.dirHandle){ const fh = await S.dirHandle.getFileHandle(name, {create:true}); const w = await fh.createWritable(); await w.write(blob); await w.close(); return name; }
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000); return name;
+}
+
+/* ------------------------------------------------------------------ motor de reprodução (Web Audio)
+   Um único AudioContext = um único relógio. Todas as fontes arrancam no mesmo instante
+   (start(t0, offset)), por isso ficam alinhadas à amostra. Mute/solo/volume/pan mexem só
+   em ganhos com rampas curtas — a reprodução nunca pára. Seek: rampa de saída de 12 ms,
+   novas fontes na nova posição, rampa de entrada (sem clicks nem duplo ataque). */
+const A = {ctx:null, master:null, sr:44100, tracks:[], playing:false, t0:0, pos:0, dur:0, loop:false, srcs:[], raf:0, zoom:1};
+function audioCtx(sr){
+  if(A.ctx && A.sr === sr) return A.ctx;
+  if(A.ctx) { try{ A.ctx.close(); }catch(e){} }
+  const C = window.AudioContext || window.webkitAudioContext;
+  try { A.ctx = new C({sampleRate: sr, latencyHint:"playback"}); } catch(e){ A.ctx = new C(); }
+  A.sr = sr; A.master = A.ctx.createGain(); A.master.connect(A.ctx.destination);
+  return A.ctx;
+}
+async function decodeAt(arrayBuf, sr){ const ctx = audioCtx(sr); return await ctx.decodeAudioData(arrayBuf); }
+function makeTrack(o){ return Object.assign({muted:false, solo:false, vol:1, pan:0, open:false, metrics:null, presence:null}, o); }
+function effGain(t){ const anySolo = A.tracks.some(x=>x.solo); return (!t.muted && (!anySolo || t.solo)) ? t.vol : 0; }
+
+function setTracks(tracks, sr){
+  stop(true);
+  const ctx = audioCtx(sr);
+  A.tracks.forEach(t => { try{ t.gain.disconnect(); }catch(e){} });
+  tracks.forEach(t => { t.gain = ctx.createGain(); t.panner = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
+    if(t.panner){ t.gain.connect(t.panner); t.panner.connect(A.master); t.panner.pan.value = t.pan; } else t.gain.connect(A.master);
+    t.gain.gain.value = 0; t.peaks = computePeaks(t.buffer); });
+  A.tracks = tracks; A.dur = Math.max(0, ...tracks.map(t=>t.buffer.duration)); A.pos = 0;
+  A.tracks.forEach(t => t.gain.gain.value = effGain(t));
+  $("#tcDur").textContent = fmtTime(A.dur);
+  renderTracks(); updateClock();
+}
+function applyGains(){
+  if(!A.ctx) return; const now = A.ctx.currentTime;
+  A.tracks.forEach(t => { t.gain.gain.cancelScheduledValues(now); t.gain.gain.setTargetAtTime(effGain(t), now, .008);
+    if(t.panner){ t.panner.pan.cancelScheduledValues(now); t.panner.pan.setTargetAtTime(t.pan, now, .008); } });
+  $$(".trow[data-id]").forEach(r => { const t = A.tracks.find(x=>x.id===r.dataset.id); if(t) r.classList.toggle("off", effGain(t) === 0); });
+}
+function position(){ return A.playing ? Math.min(A.dur, A.ctx.currentTime - A.t0) : A.pos; }
+function play(from){
+  if(!A.tracks.length) return;
+  const ctx = A.ctx; if(ctx.state === "suspended") ctx.resume();
+  const off = Math.max(0, Math.min(from == null ? A.pos : from, A.dur - .001));
+  const t0 = ctx.currentTime + .05;
+  A.srcs = A.tracks.map(t => { const s = ctx.createBufferSource(); s.buffer = t.buffer; s.connect(t.gain); s.start(t0, off); return s; });
+  A.master.gain.cancelScheduledValues(ctx.currentTime);
+  A.master.gain.setValueAtTime(0, t0); A.master.gain.linearRampToValueAtTime(1, t0 + .012);
+  A.t0 = t0 - off; A.playing = true; setPlayIcon(); tick();
+}
+function halt(){
+  if(!A.playing) return; const ctx = A.ctx, now = ctx.currentTime;
+  A.pos = position();
+  A.master.gain.cancelScheduledValues(now); A.master.gain.setValueAtTime(A.master.gain.value, now); A.master.gain.linearRampToValueAtTime(0, now + .012);
+  const old = A.srcs; old.forEach(s => { try{ s.stop(now + .015); }catch(e){} });
+  A.srcs = []; A.playing = false; cancelAnimationFrame(A.raf); setPlayIcon();
+}
+function toggle(){ A.playing ? halt() : play(); updateClock(); }
+function stop(silent){ halt(); A.pos = 0; if(!silent) updateClock(); }
+function seek(t){ t = Math.max(0, Math.min(A.dur, t)); if(A.playing){ halt(); A.pos = t; play(t); } else { A.pos = t; } updateClock(); }
+function tick(){
+  const p = position();
+  if(A.playing && p >= A.dur - .002){ if(A.loop){ halt(); A.pos = 0; play(0); } else { halt(); A.pos = 0; } }
+  updateClock();
+  if(A.playing) A.raf = requestAnimationFrame(tick);
+}
+function setPlayIcon(){ $("#playIco").innerHTML = A.playing ? '<rect x="2.5" y="1.5" width="3" height="11" fill="currentColor"/><rect x="8.5" y="1.5" width="3" height="11" fill="currentColor"/>' : '<path d="M3 1.5v11l9-5.5z" fill="currentColor"/>'; $("#playBtn").setAttribute("aria-label", A.playing ? "Pausa" : "Reproduzir"); }
+function updateClock(){
+  const p = position();
+  $("#tcNow").textContent = fmtTime(p); $("#tcSmp").textContent = Math.round(p*A.sr).toLocaleString("pt-PT") + " smp · " + (A.sr/1000) + " kHz";
+  const ph = $("#playhead"); if(ph && A.dur){ const lane = $(".trow .lane"); if(lane){ ph.style.transform = `translateX(${lane.offsetLeft + p/A.dur*lane.clientWidth}px)`; } }
+}
+
+/* ------------------------------------------------------------------ desenho das pistas */
+function computePeaks(buf){
+  const N = 8192, n = buf.length, ch = Math.min(2, buf.numberOfChannels), out = new Float32Array(N*2);
+  const step = n / N; const d0 = buf.getChannelData(0), d1 = ch > 1 ? buf.getChannelData(1) : d0;
+  for(let i=0;i<N;i++){ let mn=0, mx=0; const a=Math.floor(i*step), b=Math.min(n, Math.floor((i+1)*step)); const inc = Math.max(1, Math.floor((b-a)/96));
+    for(let j=a;j<b;j+=inc){ const v=(d0[j]+d1[j])*.5; if(v<mn) mn=v; if(v>mx) mx=v; } out[2*i]=mn; out[2*i+1]=mx; }
+  return out;
+}
+function drawWave(cv, t){
+  const dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight; if(!w || !h) return;
+  cv.width = Math.round(w*dpr); cv.height = Math.round(h*dpr);
+  const g = cv.getContext("2d"); g.setTransform(dpr,0,0,dpr,0,0); g.clearRect(0,0,w,h);
+  const css = getComputedStyle(cv);
+  g.strokeStyle = css.getPropertyValue("--line").trim() || "#333"; g.globalAlpha = .7; g.beginPath(); g.moveTo(0,h/2+.5); g.lineTo(w,h/2+.5); g.stroke(); g.globalAlpha = 1;
+  g.fillStyle = tokenColor(t.id, t.family);
+  const P = t.peaks, N = P.length/2, mid = h/2, amp = h*.46;
+  // escala de pico: normalizada à pista mais alta da sessão, para comparar níveis entre stems
+  const ref = A.refPeak || 1;
+  for(let x=0;x<w;x++){ const a = Math.floor(x/w*N), b = Math.max(a+1, Math.floor((x+1)/w*N)); let mn=0, mx=0;
+    for(let i=a;i<b;i++){ if(P[2*i]<mn) mn=P[2*i]; if(P[2*i+1]>mx) mx=P[2*i+1]; }
+    const y1 = mid - mx/ref*amp, y2 = mid - mn/ref*amp; g.fillRect(x, y1, 1, Math.max(1, y2-y1)); }
+}
+function drawRuler(cv){
+  const dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight; if(!w) return;
+  cv.width = Math.round(w*dpr); cv.height = Math.round(h*dpr); const g = cv.getContext("2d"); g.setTransform(dpr,0,0,dpr,0,0);
+  const css = getComputedStyle(document.documentElement);
+  g.fillStyle = css.getPropertyValue("--fg-3").trim(); g.strokeStyle = css.getPropertyValue("--line-2").trim();
+  g.font = "10px " + css.getPropertyValue("--f-mono"); if(!A.dur) return;
+  const pxPerSec = w / A.dur; const steps = [.5,1,2,5,10,15,30,60]; const step = steps.find(s => s*pxPerSec >= 64) || 60;
+  for(let s=0; s<=A.dur; s+=step){ const x = Math.round(s*pxPerSec)+.5; g.beginPath(); g.moveTo(x,h-8); g.lineTo(x,h); g.stroke(); g.fillText(fmtDur(s), x+3, h-11); }
+}
+function renderTracks(){
+  const host = $("#tracksInner");
+  if(!A.tracks.length){
+    host.innerHTML = `<div class="empty"><strong>Nenhuma pista ainda</strong>Separa uma mistura ou usa “Abrir stems…” para carregar ficheiros já separados no mixer.</div>`;
+    $("#transport").querySelectorAll("button").forEach(b => b.disabled = true); return;
+  }
+  $("#transport").querySelectorAll("button").forEach(b => b.disabled = false);
+  A.refPeak = Math.max(1e-3, ...A.tracks.map(t => { let m=0; const P=t.peaks; for(let i=0;i<P.length;i++){ const v=Math.abs(P[i]); if(v>m) m=v; } return m; }));
+  host.style.setProperty("--lane-w", A.zoom === 1 ? "minmax(0,1fr)" : `calc((min(100vw,1680px) - 420px) * ${A.zoom})`);
+  const rows = [`<div class="trow ruler"><div class="thdr"><span class="eyebrow">${A.tracks.length} pistas</span>${S.example?'<span class="example-flag">sessão de exemplo</span>':''}</div><div class="lane" id="rulerLane"><canvas></canvas></div></div>`];
+  A.tracks.forEach((t,i) => {
+    const m = t.metrics || {};
+    const meta = [m.peak_db != null ? "pk " + fmtDb(m.peak_db) : null, m.lufs != null ? fmtDb(m.lufs) + " LUFS" : null, t.buffer.numberOfChannels === 1 ? "mono" : "st"].filter(Boolean).join(" · ");
+    rows.push(`<div class="trow" data-id="${esc(t.id)}" style="--c:${colorOf(t.id,t.family)}">
+      <div class="thdr">
+        <div class="tname"><span title="${esc(t.label)}">${esc(t.label)}</span></div>
+        <div class="ms"><button class="m" type="button" aria-pressed="${t.muted}" title="Mute">M</button><button class="s" type="button" aria-pressed="${t.solo}" title="Solo">S</button><button class="i" type="button" aria-pressed="${t.open}" title="Análise técnica">i</button></div>
+        <div class="tmeta">${esc(meta)}</div>
+        <div class="faders"><input type="range" class="vol" id="vol_${i}" min="0" max="150" step="1" value="${Math.round(t.vol*100)}" aria-label="Volume ${esc(t.label)}">
+          <output class="volv">${volText(t.vol)}</output>
+          <input type="range" class="pan" id="pan_${i}" min="-100" max="100" step="1" value="${Math.round(t.pan*100)}" aria-label="Pan ${esc(t.label)}" title="Pan (duplo clique = centro)"></div>
+      </div>
+      <div class="lane"><canvas></canvas></div>
+      ${t.open ? detailsHtml(t) : ""}
+    </div>`);
+  });
+  host.innerHTML = rows.join("") + `<div class="playhead" id="playhead"></div>`;
+  $$(".trow[data-id]", host).forEach(row => {
+    const t = A.tracks.find(x=>x.id===row.dataset.id);
+    $(".m",row).onclick = e => { t.muted = !t.muted; e.currentTarget.setAttribute("aria-pressed", t.muted); applyGains(); };
+    $(".s",row).onclick = e => { t.solo = !t.solo; e.currentTarget.setAttribute("aria-pressed", t.solo); applyGains(); };
+    $(".i",row).onclick = () => { t.open = !t.open; renderTracks(); };
+    const vol = $(".vol",row); vol.oninput = () => { t.vol = vol.value/100; $(".volv",row).textContent = volText(t.vol); applyGains(); };
+    vol.ondblclick = () => { vol.value = 100; vol.oninput(); };
+    const pan = $(".pan",row); pan.oninput = () => { t.pan = pan.value/100; applyGains(); };
+    pan.ondblclick = () => { pan.value = 0; pan.oninput(); };
+    row.classList.toggle("off", effGain(t) === 0);
+  });
+  requestAnimationFrame(() => {
+    $$(".trow[data-id] .lane canvas", host).forEach((cv,i) => drawWave(cv, A.tracks[i]));
+    drawRuler($("#rulerLane canvas"));
+    updateClock();
+  });
+  $$(".lane", host).forEach(l => bindSeek(l));
+  $("#zoomTxt").textContent = A.zoom + "×";
+}
+function volText(v){ return Math.round(v*100) + "% " + (v>0 ? fmtDb(db(v),1) : "−∞"); }
+function detailsHtml(t){
+  const m = t.metrics || {}; const f = (v,u,d=1) => v == null ? "—" : (typeof v === "number" ? (u==="dB"||u==="LUFS"||u==="dBTP" ? fmtDb(v,d) : v.toFixed(d)) : v) + " " + u;
+  const items = [["Pico", f(m.peak_db,"dB")],["True peak", f(m.true_peak_db,"dBTP")],["RMS", f(m.rms_db,"dB")],["Loudness", f(m.lufs,"LUFS")],
+    ["Crest factor", f(m.crest_db,"dB")],["Dinâmica", f(m.dynamic_range_db,"dB")],["Largura estéreo", m.stereo_width==null?"—":Math.round(m.stereo_width*100)+" %"],
+    ["Correlação", m.correlation==null?"—":m.correlation.toFixed(2)],["Centróide espectral", m.spectral_centroid_hz==null?"—":Math.round(m.spectral_centroid_hz)+" Hz"],
+    ["Presença na mistura", t.presence==null?"—":fmtDb(t.presence)+" dB"]];
+  return `<div class="details">${items.map(([k,v])=>`<div>${k}<b>${v}</b></div>`).join("")}</div>`;
+}
+function bindSeek(lane){
+  const at = ev => { const r = lane.getBoundingClientRect(); return (Math.max(0, Math.min(r.width, ev.clientX - r.left)) / r.width) * A.dur; };
+  let dragging = false;
+  lane.addEventListener("pointerdown", ev => { if(!A.dur) return; dragging = true; lane.setPointerCapture(ev.pointerId); const wasPlaying = A.playing; halt(); A.pos = at(ev); updateClock(); lane._resume = wasPlaying; });
+  lane.addEventListener("pointermove", ev => { if(dragging){ A.pos = at(ev); updateClock(); } });
+  lane.addEventListener("pointerup", ev => { if(!dragging) return; dragging = false; A.pos = at(ev); if(lane._resume) play(A.pos); updateClock(); });
+}
+
+/* ------------------------------------------------------------------ exportação da mistura (offline, sample-accurate)
+   Renderiza o MESMO grafo (ganho → pan) num OfflineAudioContext à taxa dos stems:
+   o ficheiro corresponde ao que se ouve. Sem normalização; se o pico passar 0 dBFS,
+   grava em 32-bit float e avisa. */
+async function exportMix(){
+  if(!A.tracks.length) return;
+  const btn = $("#exportMixBtn"); btn.disabled = true; btn.textContent = "A exportar…";
+  try {
+    const n = Math.round(A.dur * A.sr);
+    const off = new OfflineAudioContext(2, n, A.sr);
+    A.tracks.forEach(t => { const g = effGain(t); if(g === 0) return; const s = off.createBufferSource(); s.buffer = t.buffer;
+      const gn = off.createGain(); gn.gain.value = g; const p = off.createStereoPanner ? off.createStereoPanner() : null;
+      s.connect(gn); if(p){ p.pan.value = t.pan; gn.connect(p); p.connect(off.destination); } else gn.connect(off.destination); s.start(0); });
+    const out = await off.startRendering();
+    let peak = 0; for(let c=0;c<2;c++){ const d = out.getChannelData(c); for(let i=0;i<d.length;i++){ const v = Math.abs(d[i]); if(v>peak) peak=v; } }
+    let fmt = $("#fmtSel").value; if(!/^wav/.test(fmt)) fmt = "wav24";
+    let warn = "";
+    if(peak > 1 && fmt !== "wav32f"){ fmt = "wav32f"; warn = `Pico de ${fmtDb(db(peak),2)} dBFS: gravado em 32-bit float para não cortar. Baixa o volume se precisares de inteiro.`; }
+    const song = (S.result && S.result.report.source ? S.result.report.source.name : (S.file ? S.file.name : "Sessao")).replace(/[^\w\- ]+/g,"_");
+    const where = await deliverBlob(encodeWav(out, fmt), `${song}_Mix_STEMS4U.wav`);
+    toast(warn || ("Mistura exportada" + (S.mode === "engine" ? ": " + String(where).split(/[\\/]/).pop() : "")));
+    if(warn) alertBox("Mistura exportada sem clipping.", warn, "info");
+  } catch(e){ alertBox("Não foi possível exportar a mistura.", e.message); }
+  btn.disabled = false; btn.textContent = "Exportar mistura";
+}
+function encodeWav(buf, fmt){
+  const ch = buf.numberOfChannels, n = buf.length, sr = buf.sampleRate;
+  const float = fmt === "wav32f", bits = float ? 32 : fmt === "wav16" ? 16 : 24, bps = bits/8;
+  const data = new ArrayBuffer(44 + n*ch*bps), v = new DataView(data); let o = 0;
+  const str = s => { for(let i=0;i<s.length;i++) v.setUint8(o++, s.charCodeAt(i)); }, u32 = x => { v.setUint32(o, x, true); o+=4; }, u16 = x => { v.setUint16(o, x, true); o+=2; };
+  str("RIFF"); u32(36 + n*ch*bps); str("WAVE"); str("fmt "); u32(16); u16(float ? 3 : 1); u16(ch); u32(sr); u32(sr*ch*bps); u16(ch*bps); u16(bits); str("data"); u32(n*ch*bps);
+  const chans = []; for(let c=0;c<ch;c++) chans.push(buf.getChannelData(c));
+  for(let i=0;i<n;i++) for(let c=0;c<ch;c++){
+    let x = chans[c][i];
+    if(float){ v.setFloat32(o, x, true); o+=4; continue; }
+    if(bits === 16) x += (Math.random() - Math.random()) / 32768; // TPDF dither
+    x = Math.max(-1, Math.min(1, x));
+    if(bits === 16){ v.setInt16(o, Math.round(x < 0 ? x*32768 : x*32767), true); o+=2; }
+    else { const s = Math.round(x < 0 ? x*8388608 : x*8388607); v.setUint8(o++, s & 255); v.setUint8(o++, (s>>8) & 255); v.setUint8(o++, (s>>16) & 255); }
+  }
+  return new Blob([data], {type:"audio/wav"});
+}
+
+/* ------------------------------------------------------------------ métricas no browser (modo web / stems abertos) */
+function jsMetrics(buf){
+  const L = buf.getChannelData(0), R = buf.numberOfChannels > 1 ? buf.getChannelData(1) : L, n = L.length, sr = buf.sampleRate;
+  let pk=0, ss=0, lr=0, ll=0, rr=0, mm=0, sd=0;
+  for(let i=0;i<n;i++){ const a=L[i], b=R[i]; const m=Math.max(Math.abs(a),Math.abs(b)); if(m>pk) pk=m; ss+=a*a+b*b; lr+=a*b; ll+=a*a; rr+=b*b; const M=(a+b)/2, Sd=(a-b)/2; mm+=M*M; sd+=Sd*Sd; }
+  const rms = Math.sqrt(ss/(2*n));
+  return {peak_db: db(pk), rms_db: db(rms), crest_db: rms>0 ? db(pk)-db(rms) : null, lufs: lufs(L,R,sr),
+          correlation: ll&&rr ? lr/Math.sqrt(ll*rr) : 1, stereo_width: (mm+sd) ? 2*sd/(mm+sd) : 0};
+}
+function lufs(L, R, sr){ // BS.1770-4 (mesmo filtro K do motor)
+  const biq = (f0,G,Q,shelf) => { const K = Math.tan(Math.PI*f0/sr), a0 = 1+K/Q+K*K;
+    if(shelf){ const Vh=Math.pow(10,G/20), Vb=Math.pow(Vh,.4996667741545416); return [[(Vh+Vb*K/Q+K*K)/a0, 2*(K*K-Vh)/a0, (Vh-Vb*K/Q+K*K)/a0],[1,2*(K*K-1)/a0,(1-K/Q+K*K)/a0]]; }
+    return [[1,-2,1],[1,2*(K*K-1)/a0,(1-K/Q+K*K)/a0]]; };
+  const f1 = biq(1681.974450955533,3.999843853973347,.7071752369554196,true), f2 = biq(38.13547087602444,0,.5003270373238773,false);
+  const filt = x => { const y = new Float64Array(x.length);
+    let s1x1=0,s1x2=0,s1y1=0,s1y2=0,s2x1=0,s2x2=0,s2y1=0,s2y2=0; const [b1,a1]=f1,[b2,a2]=f2;
+    for(let i=0;i<x.length;i++){ const v=x[i]; const u=b1[0]*v+b1[1]*s1x1+b1[2]*s1x2-a1[1]*s1y1-a1[2]*s1y2; s1x2=s1x1; s1x1=v; s1y2=s1y1; s1y1=u;
+      const w=b2[0]*u+b2[1]*s2x1+b2[2]*s2x2-a2[1]*s2y1-a2[2]*s2y2; s2x2=s2x1; s2x1=u; s2y2=s2y1; s2y1=w; y[i]=w; } return y; };
+  const yl = filt(L), yr = L === R ? yl : filt(R); const blk = Math.floor(.4*sr), hop = Math.floor(.1*sr), z = [];
+  for(let s=0; s+blk<=yl.length; s+=hop){ let a=0, b=0; for(let i=s;i<s+blk;i++){ a+=yl[i]*yl[i]; b+=yr[i]*yr[i]; } z.push((a+b)/blk); }
+  if(!z.length) return null;
+  const lk = v => -0.691 + 10*Math.log10(v+1e-12);
+  const g1 = z.filter(v => lk(v) > -70); if(!g1.length) return null;
+  const rel = lk(g1.reduce((a,b)=>a+b,0)/g1.length) - 10; const g2 = g1.filter(v => lk(v) > rel);
+  return g2.length ? lk(g2.reduce((a,b)=>a+b,0)/g2.length) : null;
+}
+
+/* ------------------------------------------------------------------ abrir stems já existentes */
+async function openStemFiles(files){
+  if(!files.length) return;
+  const list = Array.from(files).sort((a,b)=>a.name.localeCompare(b.name));
+  try {
+    const ctx0 = new (window.AudioContext || window.webkitAudioContext)(); const first = await ctx0.decodeAudioData(await list[0].arrayBuffer()); ctx0.close();
+    const sr = first.sampleRate; const tracks = [];
+    for(const f of list){ const b = await decodeAt(await f.arrayBuffer(), sr); const id = "f" + tracks.length;
+      const label = f.name.replace(/\.[^.]+$/,"").replace(/^\d+_/,""); const fam = guessFamily(label);
+      tracks.push(makeTrack({id, label, family: fam, buffer: b, metrics: jsMetrics(b)})); }
+    const n = Math.max(...tracks.map(t=>t.buffer.length)); if(tracks.some(t=>t.buffer.length !== n)) alertBox("Os ficheiros têm durações diferentes.", "Foram alinhados pelo início; stems do STEMS4U têm sempre a mesma duração.", "info");
+    S.example = false; S.result = null; setTracks(tracks, sr); $("#resTitle").textContent = tracks.length + " stems abertos no mixer"; $("#reportPanel").hidden = true;
+  } catch(e){ alertBox("Não foi possível abrir os stems.", e.message); }
+}
+function guessFamily(n){ n = n.toLowerCase(); if(/voc|voz|lead|backing|coro/.test(n)) return "vocals"; if(/drum|bater|kick|bombo|snare|tarola|tom|hat|cymb|prato/.test(n)) return "drums";
+  if(/bass|baixo|808/.test(n)) return "bass"; if(/guit|piano|key|tecl|synth/.test(n)) return "music"; if(/noise|ruido|fx/.test(n)) return "fx"; return "other"; }
+async function openProject(){
+  try { const r = await api("/api/pick", {json:{kind:"project"}}); if(!r.path) return;
+    const proj = await api("/api/project?path=" + encodeURIComponent(r.path));
+    const sr = proj.report.sample_rate; const tracks = [];
+    for(const t of proj.tracks){ const resp = await fetch("/api/file?path=" + encodeURIComponent(t.file) + "&t=" + encodeURIComponent(S.token));
+      tracks.push(makeTrack({id:t.id, label:t.label, family:t.family, muted:t.muted, buffer: await decodeAt(await resp.arrayBuffer(), sr)})); }
+    S.result = {outdir: proj.folder, report: proj.report}; S.example = false; setTracks(tracks, sr);
+    $("#resTitle").textContent = proj.name; $("#revealBtn").hidden = false; showReport(proj.report, proj.folder);
+  } catch(e){ alertBox(e.message, e.hint); }
+}
+
+/* ------------------------------------------------------------------ relatório */
+function showReport(rep, outdir){
+  const p = $("#reportPanel"); p.hidden = false;
+  const mr = rep.model_reconstruction, fr = rep.final_reconstruction || {};
+  const cells = [
+    ["Reconstrução final", fr.accuracy_pct != null ? fr.accuracy_pct.toFixed(3) + " %" : "—"],
+    ["Soma do modelo vs mistura", mr ? mr.accuracy_pct.toFixed(2) + " % · " + (mr.snr_db != null ? mr.snr_db.toFixed(1) + " dB SNR" : "") : "—"],
+    ["Amostras por pista", rep.frames ? Number(rep.frames).toLocaleString("pt-PT") : "—"],
+    ["Taxa de amostragem", rep.sample_rate ? (rep.sample_rate/1000) + " kHz" : "—"],
+    ["Modelos", (rep.plan||[]).map(x=>x.model).join(" → ") || "—"],
+  ];
+  $("#report").innerHTML = cells.map(([k,v]) => `<div class="kv"><span>${esc(k)}</span><b style="font-size:${String(v).length>22?'12.5px':'16px'}">${esc(v)}</b></div>`).join("");
+  $("#repTime").textContent = rep.elapsed_s != null ? "processado em " + fmtDur(rep.elapsed_s) : "";
+  const facts = [];
+  if(outdir) facts.push(`<span class="badge" title="${esc(outdir)}">Pasta: ${esc(String(outdir).split(/[\\/]/).pop())}</span>`);
+  (rep.dropped||[]).forEach(d => facts.push(`<span class="badge warn" title="${esc(d.reason)}">${esc(d.label)} sem conteúdo → em Other</span>`));
+  (rep.warnings||[]).forEach(w => alertBox("Aviso de exportação", w, "info"));
+  $("#facts").innerHTML = facts.join("");
+}
+
+/* ------------------------------------------------------------------ sessão de exemplo (modo web)
+   Sinais SINTÉTICOS gerados aqui para demonstrar o mixer. Não são uma separação. */
+function loadExampleSession(){
+  const sr = 44100, dur = 12, n = sr*dur; audioCtx(sr);
+  let seed = 7; const rnd = () => (seed = (seed*16807) % 2147483647) / 2147483647 * 2 - 1;
+  const mk = (fn, pan=0) => { const b = new AudioBuffer({length:n, numberOfChannels:2, sampleRate:sr}); const L = b.getChannelData(0), R = b.getChannelData(1);
+    for(let i=0;i<n;i++){ const v = fn(i/sr, i); L[i] = v*(1-Math.max(0,pan)); R[i] = v*(1+Math.min(0,pan)); } return b; };
+  const beat = .5, env = (t, per, off, dec) => { const x = ((t - off) % per + per) % per; return t >= off ? Math.exp(-x/dec) : 0; };
+  const notes = [220, 261.63, 196, 246.94];
+  const tracks = [
+    makeTrack({id:"vocals", label:"Voz (exemplo)", family:"vocals", buffer: mk((t)=> { const f = notes[Math.floor(t/1.5)%4]; const g = (t%1.5)<1.2 ? Math.sin(Math.PI*(t%1.5)/1.2) : 0; return .18*g*(Math.sin(2*Math.PI*f*t + 2.5*Math.sin(2*Math.PI*5.2*t)) + .3*Math.sin(4*Math.PI*f*t)); })}),
+    makeTrack({id:"drums", label:"Bateria (exemplo)", family:"drums", muted:true, buffer: mk((t)=> .55*env(t,beat,0,.07)*Math.sin(2*Math.PI*(48+90*env(t,beat,0,.02))*t) + .22*env(t,beat*2,beat,.05)*rnd() + .05*env(t,beat/2,beat/4,.02)*rnd())}),
+    makeTrack({id:"kick", label:"Bombo (exemplo)", family:"drums", buffer: mk((t)=> .55*env(t,beat,0,.07)*Math.sin(2*Math.PI*(48+90*env(t,beat,0,.02))*t))}),
+    makeTrack({id:"snare", label:"Tarola (exemplo)", family:"drums", buffer: mk((t)=> .22*env(t,beat*2,beat,.05)*rnd(), .1)}),
+    makeTrack({id:"bass", label:"Baixo (exemplo)", family:"bass", buffer: mk((t)=> { const f = [55,65.41,49,61.74][Math.floor(t/1.5)%4]; return .3*Math.tanh(1.6*Math.sin(2*Math.PI*f*t))*(.55+.45*env(t,beat/2,0,.18)); })}),
+    makeTrack({id:"other", label:"Other (exemplo)", family:"other", buffer: mk((t)=> { const f = notes[Math.floor(t/1.5)%4]*2; return .05*(Math.sin(2*Math.PI*f*t)+Math.sin(2*Math.PI*f*1.26*t)+Math.sin(2*Math.PI*f*1.5*t))*(1-((t%1.5)/1.5)*.6); }, -.3)}),
+  ];
+  tracks.forEach(t => t.metrics = jsMetrics(t.buffer));
+  S.example = true; setTracks(tracks, sr);
+  $("#resTitle").textContent = "Sessão de exemplo";
+  alertBox("Sessão de exemplo — sinais sintéticos gerados no browser.", "Serve para experimentar o mixer (mute, solo, volume, pan, seek, exportar mistura). Carrega uma música para fazer uma separação real.", "info");
+}
+
+/* ------------------------------------------------------------------ modais */
+function openModal(title, html){ $("#modalTitle").textContent = title; $("#modalBody").innerHTML = html; $("#modal").hidden = false; $("#modalClose").focus(); }
+function closeModal(){ $("#modal").hidden = true; }
+function modelsModal(){
+  if(S.mode === "web"){
+    openModal("Sobre o modo web", `<div class="sec"><p style="margin:0">No browser o STEMS4U corre o <b>HTDemucs v4</b> (Meta, licença MIT) convertido para ONNX, com WebGPU quando existe e WebAssembly como alternativa. Nada sai do teu computador: a música é processada localmente; só o modelo (≈172 MB) é descarregado uma vez e fica em cache.</p>
+      <p class="muted" style="margin:0">Separa Voz, Bateria, Baixo e Other a 44,1 kHz. Peças de bateria, voz principal/coros, guitarra, piano, taxas originais (até 192 kHz), cache de projectos e fila de lotes estão na app desktop para macOS e Windows.</p></div>`);
+    return;
+  }
+  const rows = S.info.models.map(m => {
+    const lic = m.license; const st = lic.status === "verified" ? '<span class="pill ok">licença verificada</span>' : '<span class="pill warn">licença dos pesos a confirmar</span>';
+    const outs = Object.keys(m.outputs).filter(x=>x!=="other").map(id => (S.cats.find(c=>c.id===id)||{label:id}).label).join(", ");
+    const action = m.installed ? `<button class="ghost" data-rm="${esc(m.id)}" type="button">Remover</button>` : (m.manual ? '<span class="muted">Instalação manual</span>' : (m.backend === "audio_separator" ? '<span class="muted">Só build de desenvolvimento</span>' : `<button class="ghost" data-inst="${esc(m.id)}" type="button">Instalar · ${m.size_mb} MB</button>`));
+    return `<div class="mitem"><div><h3>${esc(m.name)} ${m.installed ? '<span class="pill ok">instalado</span>' : ''}</h3>
+      <p>${esc(m.arch)} · v${esc(m.version)} · ${m.input ? "entrada: " + esc(m.input) : "entrada: mistura"} → ${esc(outs)}</p>
+      <p>${st}<span class="pill">pesos: ${esc(lic.weights)}</span><span class="pill">RAM ${m.ram_gb} GB</span><span class="pill">VRAM ${m.vram_gb} GB</span><span class="pill">CPU ≈ ${m.speed_cpu_rt}× tempo real</span></p>
+      ${m.quality && m.quality.nota ? `<p>${esc(m.quality.nota)}</p>` : ""}${m.manual && !m.installed ? `<p>${esc(m.manual)}</p>` : ""}${!m.usable && m.installed ? `<p style="color:var(--warn)">${esc(m.reason)}</p>` : ""}</div>
+      <div>${action}</div></div>`;
+  }).join("");
+  openModal("Gestor de modelos", `<div class="mlist">${rows}</div>`);
+  $$("[data-inst]").forEach(b => b.onclick = async () => { b.disabled = true; b.textContent = "A descarregar…";
+    try { await api("/api/models/install", {json:{id:b.dataset.inst}}); await refreshInfo(); modelsModal(); toast("Modelo instalado"); } catch(e){ b.textContent = "Falhou"; alertBox(e.message, e.hint); } });
+  $$("[data-rm]").forEach(b => b.onclick = async () => { await api("/api/models/remove", {json:{id:b.dataset.rm}}); await refreshInfo(); modelsModal(); });
+}
+async function refreshInfo(){ S.info = await api("/api/info"); S.cats = S.info.categories; renderPicker(); updateGo(); }
+function hwModal(){
+  if(S.mode === "web"){ openModal("Hardware", `<div class="sec">${("gpu" in navigator) ? "WebGPU está disponível neste browser: a separação usa a placa gráfica." : "Este browser não expõe WebGPU: a separação usa WebAssembly no CPU (mais lenta)."}</div>`); return; }
+  const h = S.info.hardware;
+  const kv = [["Sistema", h.os + (h.macos_version ? " (macOS " + h.macos_version + ")" : "")],["Arquitectura", h.arch],["CPU", h.cpu + " · " + h.cpu_threads + " threads"],["RAM", h.ram_gb ? h.ram_gb + " GB" : "—"],
+    ["Acelerador", h.device === "cpu" ? "Nenhum (CPU)" : h.device.toUpperCase() + " · " + h.gpu],["VRAM", h.vram_gb ? h.vram_gb + " GB" : "—"],["PyTorch", h.torch || "não instalado"],["Recomendado", QUAL_LABEL[h.recommendation.quality]]];
+  openModal("Hardware detectado", `<div class="hwgrid">${kv.map(([k,v])=>`<div class="kv"><span>${esc(k)}</span><b style="font-size:13px">${esc(v)}</b></div>`).join("")}</div><div class="sec" style="padding-top:0"><span class="muted">${esc(h.recommendation.reason)}</span></div>`);
+}
+
+/* ------------------------------------------------------------------ eventos */
+function bindUI(){
+  const drop = $("#drop");
+  ["dragenter","dragover"].forEach(e => document.addEventListener(e, ev => { ev.preventDefault(); drop.classList.add("over"); }));
+  ["dragleave","drop"].forEach(e => document.addEventListener(e, ev => { ev.preventDefault(); if(e==="drop"||ev.target===document.documentElement) drop.classList.remove("over"); }));
+  document.addEventListener("drop", ev => { const f = ev.dataTransfer && ev.dataTransfer.files; if(!f || !f.length) return;
+    if(f.length > 1) openStemFiles(f); else setInputFile(f[0]); });
+  $("#chooseBtn").onclick = () => S.mode === "engine" && S.info.native_dialogs ? pickInputNative() : $("#fileInput").click();
+  $("#fileInput").onchange = e => { if(e.target.files[0]) setInputFile(e.target.files[0]); e.target.value = ""; };
+  $("#openProjBtn").onclick = openProject;
+  $("#clearFile").onclick = () => { S.file = null; $("#drop").hidden = false; $("#fileCard").hidden = true; updateGo(); };
+  $("#allBtn").onclick = () => { S.cats.filter(c=>c.available).forEach(c=>S.selected.add(c.id)); renderPicker(); updateGo(); };
+  $("#noneBtn").onclick = () => { S.selected.clear(); renderPicker(); updateGo(); };
+  $$("#qualSeg button").forEach(b => b.onclick = () => { S.quality = b.dataset.q; store.set("quality", S.quality); renderQuality(); updateGo(); });
+  $("#fmtSel").onchange = e => store.set("fmt", e.target.value);
+  $("#prevSel").onchange = updateGo;
+  $("#folderBtn").onclick = async () => {
+    if(S.mode === "engine"){
+      if(S.info.native_dialogs){ try { const r = await api("/api/pick", {json:{kind:"folder"}}); if(r.path) setFolder(r.path); } catch(e){ alertBox(e.message, e.hint); } }
+      else { $("#folderPath").textContent = "Diálogos nativos indisponíveis neste modo; usa a CLI com --out."; }
+    } else if(window.showDirectoryPicker){
+      try { S.dirHandle = await window.showDirectoryPicker({mode:"readwrite"}); $("#folderName").textContent = S.dirHandle.name; $("#folderPath").textContent = "Os stems são gravados directamente nesta pasta."; } catch(e){}
+    } else { $("#folderName").textContent = "Transferências"; $("#folderPath").textContent = "Este browser não permite escolher pasta: usa “Guardar stems” no fim."; }
+    updateGo();
+  };
+  $("#goBtn").onclick = () => S.mode === "engine" ? runEngine() : runWeb();
+  $("#cancelBtn").onclick = async () => { if(S.mode === "engine" && S.job && S.job.id){ await api(`/api/jobs/${S.job.id}/cancel`, {json:{}}); $("#progMsg").textContent = "A cancelar com segurança…"; } else toast("No modo web a separação termina o bloco actual antes de parar."); };
+  $("#playBtn").onclick = toggle; $("#stopBtn").onclick = () => stop();
+  $("#loopBtn").onclick = e => { A.loop = !A.loop; e.currentTarget.setAttribute("aria-pressed", A.loop); };
+  $("#zoomIn").onclick = () => { A.zoom = Math.min(16, A.zoom*2); renderTracks(); };
+  $("#zoomOut").onclick = () => { A.zoom = Math.max(1, A.zoom/2); renderTracks(); };
+  $("#exportMixBtn").onclick = exportMix;
+  $("#revealBtn").onclick = () => S.result && api("/api/reveal", {json:{path:S.result.outdir}}).catch(e=>alertBox(e.message));
+  $("#dlBtn").onclick = () => saveWebStems().then(()=>toast("Stems guardados")).catch(e=>alertBox("Não foi possível guardar.", e.message));
+  $("#importStemsBtn").onclick = () => $("#stemsInput").click();
+  $("#stemsInput").onchange = e => { openStemFiles(e.target.files); e.target.value = ""; };
+  $("#modelsBtn").onclick = modelsModal; $("#hwChip").onclick = hwModal;
+  $("#modalClose").onclick = closeModal; $("#modal").addEventListener("click", e => { if(e.target.id === "modal") closeModal(); });
+  document.addEventListener("keydown", e => {
+    const tag = (e.target.tagName || "").toLowerCase();
+    if(e.key === "Escape" && !$("#modal").hidden) return closeModal();
+    if(["input","textarea","select"].includes(tag) && e.target.type !== "range") return;
+    if(e.code === "Space"){ e.preventDefault(); toggle(); }
+    if(e.key === "Home"){ e.preventDefault(); seek(0); }
+  });
+  let rz; window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(renderTracks, 120); });
+}
+
+boot();
+</script>
