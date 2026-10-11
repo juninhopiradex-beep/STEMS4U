@@ -1,0 +1,24 @@
+[project]
+name = "stems4u"
+version = "0.1.0"
+description = "STEMS4U by Piradex — separação profissional de stems"
+requires-python = ">=3.10"
+authors = [{ name = "Ricardo Amorim (Piradex)" }]
+dependencies = ["numpy>=1.24", "scipy>=1.10", "soundfile>=0.12"]
+
+[project.optional-dependencies]
+ai = ["torch>=2.2", "torchaudio>=2.2", "dora-search", "einops", "julius>=0.2.3", "openunmix", "pyyaml", "tqdm"]
+desktop = ["pywebview>=5.0"]
+roformer = ["audio-separator"]
+
+[project.scripts]
+stems4u = "stems4u.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["stems4u*"]
+
+[tool.setuptools.package-data]
+"stems4u.models" = ["manifest.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

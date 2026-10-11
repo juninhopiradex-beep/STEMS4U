@@ -1,0 +1,15 @@
+# STEMS4U — Windows, Linux e macOS Apple Silicon (Python 3.11)
+# Depois de instalar isto, instala o demucs sem dependências (ele fixa uma versão antiga do torchaudio):
+#   pip install demucs==4.0.1 --no-deps
+numpy>=1.26
+scipy>=1.11
+soundfile>=0.12.1
+torch>=2.2
+torchaudio>=2.2
+dora-search
+einops
+julius>=0.2.3
+openunmix
+pyyaml
+tqdm
+pywebview>=5.3
