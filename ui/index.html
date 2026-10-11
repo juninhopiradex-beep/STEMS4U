@@ -74,7 +74,8 @@ button.chip:hover{border-color:var(--line-2);color:var(--fg)}
 /* seleção de stems */
 .fam{display:flex;flex-direction:column;gap:6px}
 .fam-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
-.stem{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:9px;padding:8px 10px;border-radius:9px;
+.stem-in{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;grid-column-gap:9px;width:100%}
+.stem{position:relative;display:block;width:100%;padding:8px 10px;border-radius:9px;
   border:1px solid var(--line);background:var(--panel-2);text-align:left;min-height:46px}
 .stem .sw{width:8px;height:26px;border-radius:3px;background:var(--c);opacity:.35}
 .stem .nm{font-weight:600;font-size:13px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -90,7 +91,8 @@ button.chip:hover{border-color:var(--line-2);color:var(--fg)}
 .stem.parent{grid-column:1/-1}
 .note{display:flex;gap:10px;padding:10px 12px;border-radius:9px;background:var(--panel-2);border:1px solid var(--line);font-size:12px;color:var(--fg-2)}
 .note b{color:var(--fg)}
-details.roadmap summary{cursor:pointer;font-size:12px;color:var(--fg-2);list-style:none;display:flex;justify-content:space-between}
+details.roadmap summary{cursor:pointer;font-size:12px;color:var(--fg-2);list-style:none;display:block}
+details.roadmap summary .sumrow{display:flex;justify-content:space-between}
 details.roadmap summary::-webkit-details-marker{display:none}
 details.roadmap ul{margin:8px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
 details.roadmap li{font-size:12px;color:var(--fg-3);padding-left:10px;border-left:2px solid var(--line-2)}
@@ -104,7 +106,10 @@ details.roadmap li b{color:var(--fg-2);font-weight:600}
 .seg button .rec{position:absolute;top:3px;right:4px;width:5px;height:5px;border-radius:50%;background:var(--ok)}
 .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .row > *{min-width:0}
-select.sel{background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:7px 9px;font-size:12.5px;flex:1}
+select.sel{-webkit-appearance:none;appearance:none;background:var(--panel-2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23A6ACB7' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 10px center;border:1px solid var(--line);border-radius:8px;padding:7px 28px 7px 9px;font-size:12.5px;flex:1;color:var(--fg)}
+.setup{display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:10px;border:1px solid var(--line-2);background:var(--panel-2)}
+.setup strong{font-size:14px}
+.setup p{margin:0;font-size:12px;color:var(--fg-2);line-height:1.5}
 .folder{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel-2)}
 .folder .p{font-size:11.5px;color:var(--fg-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;direction:rtl;text-align:left}
 .go{display:flex;align-items:center;justify-content:center;gap:10px;height:48px;border-radius:10px;border:0;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:15px;letter-spacing:.01em}
@@ -240,7 +245,7 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;bac
           <div class="row"><button class="ghost" id="allBtn" type="button">Todas</button><button class="ghost" id="noneBtn" type="button">Nenhuma</button></div></div>
         <div id="stemPicker" class="fam"></div>
         <div class="note"><span aria-hidden="true">↳</span><span><b>Other</b> recebe tudo o que não seleccionares, para que a soma das pistas reconstrua a mistura. Quando pedes peças de bateria ou voz detalhada, a pista-mãe também é exportada mas começa em <b>M</b>, para não duplicar.</span></div>
-        <details class="roadmap" id="roadmap"><summary><span>Ainda sem modelo fiável</span><span id="roadmapCount" class="mono"></span></summary><ul id="roadmapList"></ul></details>
+        <details class="roadmap" id="roadmap"><summary><div class="sumrow"><span>Ainda sem modelo fiável</span><span id="roadmapCount" class="mono"></span></div></summary><ul id="roadmapList"></ul></details>
       </div>
 
       <div class="sec">
@@ -420,17 +425,33 @@ async function boot(){
   const od = store.get("outdir", null); if(S.mode === "engine" && od){ setFolder(od); }
   renderPicker(); renderQuality(); bindUI(); updateGo();
   if(S.mode === "web") loadExampleSession();
-  if(S.mode === "engine" && !S.info.models.some(m => m.usable)) firstRun();
   renderTracks();
 }
 function firstRun(){
-  const box = alertBox("Primeira utilização: instala os modelos base.", "HTDemucs (Voz, Bateria, Baixo) e HTDemucs 6 stems (Guitarra, Piano), licença MIT, ≈135 MB. Fica guardado neste computador; a separação nunca descarrega nada a meio.", "info");
-  const b = document.createElement("button"); b.className = "ghost"; b.type = "button"; b.style.marginTop = "8px"; b.textContent = "Instalar modelos base";
-  b.onclick = async () => { b.disabled = true;
-    try { for(const id of ["htdemucs","htdemucs_6s"]){ b.textContent = "A descarregar " + id + "…"; await api("/api/models/install", {json:{id}}); }
-      await refreshInfo(); ["vocals","drums","bass"].forEach(s => S.selected.add(s)); renderPicker(); updateGo(); box.remove(); toast("Modelos instalados");
-    } catch(e){ b.disabled = false; b.textContent = "Tentar de novo"; alertBox(e.message, e.hint); } };
-  box.appendChild(b);
+  // Sem modelos instalados nada pode ser seleccionado: mostra um cartão claro no lugar das opções.
+  const host = $("#stemPicker");
+  const card = document.createElement("div"); card.className = "setup"; card.id = "setupCard";
+  card.innerHTML = `<strong>Instala os modelos para começar</strong>
+    <p>HTDemucs (Voz, Bateria, Baixo) e HTDemucs 6 stems (Guitarra, Piano), licença MIT, ≈135 MB. Ficam guardados neste computador e só se descarregam uma vez.</p>
+    <div class="bar" id="setupBar" hidden><i></i></div><p class="mono" id="setupMsg" hidden></p>
+    <button class="go" type="button" id="setupBtn">Instalar modelos (≈135 MB)</button>`;
+  host.insertBefore(card, host.firstChild);
+  $("#setupBtn").onclick = installBase;
+}
+async function installBase(){
+  const btn = $("#setupBtn"), bar = $("#setupBar"), msg = $("#setupMsg");
+  btn.disabled = true; btn.textContent = "A descarregar…"; bar.hidden = false; msg.hidden = false; msg.textContent = "A ligar ao servidor dos modelos…";
+  try { await api("/api/models/install", {json:{ids:["htdemucs","htdemucs_6s"]}}); }
+  catch(e){ btn.disabled = false; btn.textContent = "Tentar de novo"; msg.textContent = e.message + " " + (e.hint||""); return; }
+  const poll = async () => {
+    let st; try { st = await api("/api/models/progress"); } catch(e){ setTimeout(poll, 1500); return; }
+    $("i", bar).style.width = Math.round((st.pct||0)*100) + "%";
+    msg.textContent = (st.current ? st.current + " — " : "") + Math.round((st.pct||0)*100) + "%";
+    if(st.error){ btn.disabled = false; btn.textContent = "Tentar de novo"; msg.textContent = st.error.message + " " + (st.error.hint||""); return; }
+    if(st.done){ await refreshInfo(); ["vocals","drums","bass"].forEach(x => S.selected.add(x)); renderPicker(); updateGo(); toast("Modelos instalados — escolhe o que extrair"); return; }
+    setTimeout(poll, 700);
+  };
+  poll();
 }
 
 /* ------------------------------------------------------------------ selector de stems */
@@ -444,7 +465,7 @@ function renderPicker(){
     b.type = "button"; b.className = "stem " + cls; b.dataset.id = c.id; b.style.setProperty("--c", colorOf(c.id, c.family));
     b.setAttribute("aria-pressed", S.selected.has(c.id) ? "true" : "false");
     b.disabled = !c.available; if(!c.available) b.title = c.reason || "Indisponível";
-    b.innerHTML = `<span class="sw"></span><span style="min-width:0"><span class="nm" style="display:block">${esc(c.label)}</span><span class="ht" style="display:block">${esc(c.available ? c.hint : (c.reason||"Indisponível"))}</span></span><span class="ck"></span>`;
+    b.innerHTML = `<div class="stem-in"><span class="sw"></span><span style="min-width:0;display:block"><span class="nm" style="display:block">${esc(c.label)}</span><span class="ht" style="display:block">${esc(c.available ? c.hint : (c.reason||"Indisponível"))}</span></span><span class="ck"></span></div>`;
     b.addEventListener("click", () => { S.selected.has(c.id) ? S.selected.delete(c.id) : S.selected.add(c.id); b.setAttribute("aria-pressed", S.selected.has(c.id)); updateGo(); });
     return b;
   };
@@ -463,6 +484,7 @@ function renderPicker(){
     if(singles.length){ const grid = document.createElement("div"); grid.className = "fam-row"; singles.forEach(r => grid.appendChild(btn(r, ""))); box.appendChild(grid); }
     host.appendChild(box);
   }
+  if(S.mode === "engine" && !S.info.models.some(m => m.usable)) firstRun();
   $("#roadmapCount").textContent = S.roadmap.length;
   $("#roadmapList").innerHTML = S.roadmap.map(r => `<li><b>${esc(r.label)}</b> — ${esc(r.reason)}</li>`).join("");
 }
@@ -1080,6 +1102,31 @@ function bindUI(){
     if(e.key === "Home"){ e.preventDefault(); seek(0); }
   });
   let rz; window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(renderTracks, 120); });
+}
+
+/* ------------------------------------------------------------------ compatibilidade: WebKit antigo (Catalina)
+   Antes do Safari 14.1 o "gap" em flexbox é ignorado: tudo fica colado. Detecta-se e aplica-se margens. */
+function flexGapSupported(){
+  const d = document.createElement("div"); d.style.cssText = "display:flex;flex-direction:column;row-gap:1px;position:absolute;visibility:hidden";
+  d.appendChild(document.createElement("div")); d.appendChild(document.createElement("div"));
+  document.body.appendChild(d); const ok = d.scrollHeight === 1; d.remove(); return ok;
+}
+function polyfillGap(root){
+  (root || document.body).querySelectorAll("*").forEach(el => {
+    const cs = getComputedStyle(el); if(cs.display.indexOf("flex") < 0) return;
+    const cg = parseFloat(cs.columnGap) || 0, rg = parseFloat(cs.rowGap) || 0; if(!cg && !rg) return;
+    const col = cs.flexDirection.indexOf("column") === 0; let first = true;
+    for(const k of el.children){ if(getComputedStyle(k).position === "absolute") continue;
+      if(first){ first = false; continue; }
+      if(col){ if(rg) k.style.marginTop = rg + "px"; } else { if(cg) k.style.marginLeft = cg + "px"; if(rg && cs.flexWrap !== "nowrap") k.style.marginTop = k.style.marginTop || "0px"; }
+    }
+  });
+}
+if(!flexGapSupported()){
+  document.documentElement.classList.add("no-flexgap");
+  let t; const run = () => { clearTimeout(t); t = setTimeout(() => polyfillGap(), 30); };
+  window.addEventListener("load", run); new MutationObserver(muts => { if(muts.some(m => !(m.target.closest && m.target.closest(".tc, .progress, .toast")))) run(); })
+    .observe(document.body, {childList:true, subtree:true});
 }
 
 boot();

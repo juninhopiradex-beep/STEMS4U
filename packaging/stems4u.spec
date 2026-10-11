@@ -5,7 +5,7 @@ from pathlib import Path
 from PyInstaller.utils.hooks import collect_submodules
 
 ROOT = Path(SPECPATH).parent
-hidden = collect_submodules("demucs") + collect_submodules("webview") + ["openunmix.filtering"]
+hidden = collect_submodules("demucs") + collect_submodules("webview") + ["openunmix.filtering", "certifi"]
 a = Analysis([str(ROOT / "packaging" / "launch.py")], pathex=[str(ROOT)],
              datas=[(str(ROOT / "ui" / "index.html"), "ui"),
                     (str(ROOT / "stems4u" / "models" / "manifest.json"), "stems4u/models"),

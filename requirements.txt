@@ -13,3 +13,4 @@ openunmix
 pyyaml
 tqdm
 pywebview>=5.3
+certifi

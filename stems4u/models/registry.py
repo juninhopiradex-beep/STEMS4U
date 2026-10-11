@@ -24,6 +24,16 @@ log = get_logger("stems4u.models")
 MANIFEST = Path(__file__).with_name("manifest.json")
 
 
+def _ssl_context():
+    """Certificados do certifi: o Python embutido na app não usa os certificados do macOS."""
+    import ssl
+    try:
+        import certifi
+        return ssl.create_default_context(cafile=certifi.where())
+    except ImportError:
+        return ssl.create_default_context()
+
+
 def build_profile() -> str:
     return os.environ.get("STEMS4U_BUILD", "dev").lower()
 
@@ -112,7 +122,7 @@ class Registry:
             tmp = dest.with_suffix(".part")
             log.info("A descarregar %s", f["url"])
             try:
-                with urllib.request.urlopen(f["url"], timeout=60) as r, open(tmp, "wb") as out:
+                with urllib.request.urlopen(f["url"], timeout=60, context=_ssl_context()) as r, open(tmp, "wb") as out:
                     size = int(r.headers.get("Content-Length") or 0)
                     got = 0
                     while chunk := r.read(1 << 20):
@@ -122,7 +132,9 @@ class Registry:
                             progress((i + got / size) / total, f["name"])
             except Exception as exc:  # noqa: BLE001
                 tmp.unlink(missing_ok=True)
-                raise UserError("Falha ao descarregar o modelo.", str(exc), "download_failed") from exc
+                log.error("Download falhou: %s", exc)
+                raise UserError("Falha ao descarregar o modelo.",
+                                f"Verifica a ligação à internet e tenta de novo. Detalhe: {exc}", "download_failed") from exc
             if not self._check(tmp, f):
                 tmp.unlink(missing_ok=True)
                 raise UserError("Hash do modelo não corresponde — ficheiro rejeitado.", f["name"], "hash_mismatch")

@@ -41,11 +41,36 @@ class Engine:
         self.allowed_roots: set[Path] = set()
         self._hw = None
         self.picker = None  # definido pela app desktop (diálogos nativos)
+        self.install_state: dict = {"running": False}
 
     def hw(self):
         if self._hw is None:
             self._hw = hardware.detect()
         return self._hw
+
+    # ---------- instalação de modelos em segundo plano (com progresso para a interface)
+    def start_install(self, ids: list[str]) -> dict:
+        if self.install_state.get("running"):
+            return self.install_state
+        self.install_state = {"running": True, "ids": ids, "current": None, "pct": 0.0, "error": None, "done": False}
+
+        def work():
+            st = self.install_state
+            try:
+                for n, mid in enumerate(ids):
+                    st["current"] = self.registry.get(mid).name
+                    self.registry.install(mid, lambda p, f, n=n: st.update(pct=(n + p) / len(ids)))
+                st.update(pct=1.0, done=True)
+            except UserError as exc:
+                st["error"] = {"message": exc.message, "hint": exc.hint}
+            except Exception as exc:  # noqa: BLE001
+                log.exception("instalação de modelos")
+                st["error"] = {"message": "Falha ao instalar o modelo.", "hint": str(exc)}
+            finally:
+                st["running"] = False
+
+        threading.Thread(target=work, daemon=True, name="s4u-install").start()
+        return self.install_state
 
     def info(self) -> dict:
         avail = available_stems(self.registry)
@@ -111,6 +136,8 @@ def make_handler(engine: Engine):
                     if not u.path.startswith("/api/"):
                         self.send_error(404)
                     return
+                if u.path == "/api/models/progress":
+                    return self._json(engine.install_state)
                 if u.path == "/api/info":
                     return self._json(engine.info())
                 if u.path == "/api/jobs":
@@ -227,7 +254,7 @@ def make_handler(engine: Engine):
                     engine.jobs.cancel(u.path.split("/")[3])
                     return self._json({"ok": True})
                 if u.path == "/api/models/install":
-                    return self._json(engine.registry.install(b["id"]))
+                    return self._json(engine.start_install(b.get("ids") or [b["id"]]))
                 if u.path == "/api/models/remove":
                     engine.registry.remove(b["id"])
                     return self._json({"ok": True})
