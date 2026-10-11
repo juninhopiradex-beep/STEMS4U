@@ -148,6 +148,8 @@ def make_handler(engine: Engine):
                     return self._json(engine.jobs.jobs[u.path.split("/")[3]].snapshot())
                 if u.path == "/api/file":
                     return self._file(q.get("path", [""])[0])
+                if u.path == "/api/pcm":
+                    return self._pcm(q.get("path", [""])[0])
                 if u.path == "/api/project":
                     p = Path(q.get("path", [""])[0]).resolve()
                     proj = json.loads(p.read_text(encoding="utf-8"))
@@ -185,6 +187,28 @@ def make_handler(engine: Engine):
                 if not evs:
                     self.wfile.write(b": keepalive\n\n")
                 self.wfile.flush()
+
+        def _pcm(self, path: str):
+            """Áudio já descodificado em float32 planar (canal 0 inteiro, depois canal 1).
+            O mixer não depende do descodificador do WebKit e recebe a taxa original exacta."""
+            import numpy as np
+            import soundfile as sf
+            p = Path(path).resolve()
+            if not any(str(p).startswith(str(r)) for r in engine.allowed_roots) or not p.is_file():
+                return self._json({"message": "Acesso negado a este ficheiro"}, 403)
+            data, sr = sf.read(str(p), dtype="float32", always_2d=True)
+            body = np.ascontiguousarray(data.T).astype("<f4").tobytes()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/octet-stream")
+            self.send_header("Content-Length", str(len(body)))
+            self.send_header("X-S4U-SR", str(sr))
+            self.send_header("X-S4U-Frames", str(data.shape[0]))
+            self.send_header("X-S4U-Channels", str(data.shape[1]))
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            mv = memoryview(body)
+            for i in range(0, len(body), 1 << 20):
+                self.wfile.write(mv[i:i + (1 << 20)])
 
         def _file(self, path: str):
             p = Path(path).resolve()

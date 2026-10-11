@@ -536,7 +536,7 @@ async function setInputFile(file){
     } else {
       const buf = await file.arrayBuffer();
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      const ab = await ctx.decodeAudioData(buf.slice(0));
+      const ab = await decodeCompat(ctx, buf.slice(0));
       ctx.close();
       S.webFile = file;
       showFile({name: file.name.replace(/\.[^.]+$/,""), path: null, format: (file.name.split(".").pop()||"").toLowerCase(),
@@ -602,12 +602,19 @@ async function loadEngineResult(res){
   S.result = res; S.example = false;
   const sr = res.report.sample_rate;
   const tracks = [];
-  for(const t of res.tracks){
-    const r = await fetch("/api/file?path=" + encodeURIComponent(t.file) + "&t=" + encodeURIComponent(S.token));
-    const buf = await decodeAt(await r.arrayBuffer(), sr);
-    tracks.push(makeTrack({id:t.id, label:t.label, family:t.family, buffer:buf, muted:t.muted, metrics:t.metrics, presence:t.presence_db, file:t.file}));
+  try {
+    for(const [i, t] of res.tracks.entries()){
+      $("#progMsg").textContent = `A carregar pistas no mixer… ${i+1}/${res.tracks.length}`;
+      const buf = await loadPcm(t.file, sr);
+      tracks.push(makeTrack({id:t.id, label:t.label, family:t.family, buffer:buf, muted:t.muted, metrics:t.metrics, presence:t.presence_db, file:t.file}));
+    }
+    setTracks(tracks, sr);
+  } catch(e){
+    console.error(e); $("#progBox").hidden = true; $("#revealBtn").hidden = false;
+    $("#resTitle").textContent = "Stems exportados";
+    alertBox("Os stems foram gravados na pasta, mas o mixer não os conseguiu abrir.", "Carrega em “Abrir pasta” para os usar na DAW. Detalhe: " + (e && e.message || e));
+    showReport(res.report, res.outdir); return;
   }
-  setTracks(tracks, sr);
   $("#progBox").hidden = true;
   $("#resTitle").textContent = "A exportação está pronta";
   $("#revealBtn").hidden = false;
@@ -643,7 +650,7 @@ async function runWeb(){
   try {
     onProgress({stage:"import", progress:.02, message:"A descodificar a mistura"});
     const ctx = new (window.AudioContext || window.webkitAudioContext)({sampleRate:44100});
-    const mixBuf = await ctx.decodeAudioData((await S.webFile.arrayBuffer()).slice(0)); ctx.close();
+    const mixBuf = await decodeCompat(ctx, (await S.webFile.arrayBuffer()).slice(0)); ctx.close();
     let L = mixBuf.getChannelData(0), R = mixBuf.numberOfChannels > 1 ? mixBuf.getChannelData(1) : mixBuf.getChannelData(0);
     const prev = +$("#prevSel").value;
     if(prev){ const n = prev*44100, s = Math.max(0, Math.min(Math.floor(L.length*.3), L.length-n)); L = L.slice(s, s+n); R = R.slice(s, s+n); }
@@ -673,8 +680,8 @@ async function runWeb(){
     const parts = sel.map(s => ({id:s, l:out[s].left, r:out[s].right})).concat([{id:"other", l:oL, r:oR}]);
     const tracks = parts.map(p => {
       const c = WEB_CATEGORIES.find(c=>c.id===p.id) || {label:"Other", family:"other"};
-      const ab = new AudioBuffer({length:n, numberOfChannels:2, sampleRate:44100});
-      ab.copyToChannel(p.l, 0); ab.copyToChannel(p.r, 1);
+      const ab = newBuffer(2, n, 44100);
+      ab.getChannelData(0).set(p.l); ab.getChannelData(1).set(p.r);
       return makeTrack({id:p.id, label:c.label, family:c.family, buffer:ab});
     });
     tracks.forEach(t => t.metrics = jsMetrics(t.buffer));
@@ -733,7 +740,21 @@ function audioCtx(sr){
   A.sr = sr; A.master = A.ctx.createGain(); A.master.connect(A.ctx.destination);
   return A.ctx;
 }
-async function decodeAt(arrayBuf, sr){ const ctx = audioCtx(sr); return await ctx.decodeAudioData(arrayBuf); }
+// decodeAudioData com promessa só existe a partir do Safari 14.1; no WebKit antigo usa callbacks.
+function decodeCompat(ctx, ab){ return new Promise((res, rej) => { const p = ctx.decodeAudioData(ab, res, rej); if(p && p.then) p.then(res, rej); }); }
+async function decodeAt(arrayBuf, sr){ const ctx = audioCtx(sr); return await decodeCompat(ctx, arrayBuf); }
+function newBuffer(ch, n, sr){ return audioCtx(A.ctx ? A.sr : sr).createBuffer(ch, n, sr); }
+// Stems do motor: o servidor envia PCM float32 já descodificado (planar). Não depende do descodificador
+// do WebKit (que no Catalina falha com WAV de 24 bits grandes) e mantém a taxa original exacta.
+async function loadPcm(path, sr){
+  const r = await fetch("/api/pcm?path=" + encodeURIComponent(path) + "&t=" + encodeURIComponent(S.token));
+  if(!r.ok) throw new Error("Não foi possível ler " + path.split(/[\\/]/).pop() + " (" + r.status + ")");
+  const ch = +r.headers.get("X-S4U-Channels"), n = +r.headers.get("X-S4U-Frames"), fsr = +r.headers.get("X-S4U-SR") || sr;
+  const data = new Float32Array(await r.arrayBuffer());
+  const buf = newBuffer(ch, n, fsr);
+  for(let c=0;c<ch;c++) buf.getChannelData(c).set(data.subarray(c*n, (c+1)*n));
+  return buf;
+}
 function makeTrack(o){ return Object.assign({muted:false, solo:false, vol:1, pan:0, open:false, metrics:null, presence:null}, o); }
 function effGain(t){ const anySolo = A.tracks.some(x=>x.solo); return (!t.muted && (!anySolo || t.solo)) ? t.vol : 0; }
 
@@ -758,7 +779,7 @@ function applyGains(){
 function position(){ return A.playing ? Math.min(A.dur, A.ctx.currentTime - A.t0) : A.pos; }
 function play(from){
   if(!A.tracks.length) return;
-  const ctx = A.ctx; if(ctx.state === "suspended") ctx.resume();
+  const ctx = A.ctx; if(ctx.state === "suspended" && ctx.resume) ctx.resume();
   const off = Math.max(0, Math.min(from == null ? A.pos : from, A.dur - .001));
   const t0 = ctx.currentTime + .05;
   A.srcs = A.tracks.map(t => { const s = ctx.createBufferSource(); s.buffer = t.buffer; s.connect(t.gain); s.start(t0, off); return s; });
@@ -892,11 +913,12 @@ async function exportMix(){
   const btn = $("#exportMixBtn"); btn.disabled = true; btn.textContent = "A exportar…";
   try {
     const n = Math.round(A.dur * A.sr);
-    const off = new OfflineAudioContext(2, n, A.sr);
+    const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    const off = new OAC(2, n, A.sr);
     A.tracks.forEach(t => { const g = effGain(t); if(g === 0) return; const s = off.createBufferSource(); s.buffer = t.buffer;
       const gn = off.createGain(); gn.gain.value = g; const p = off.createStereoPanner ? off.createStereoPanner() : null;
       s.connect(gn); if(p){ p.pan.value = t.pan; gn.connect(p); p.connect(off.destination); } else gn.connect(off.destination); s.start(0); });
-    const out = await off.startRendering();
+    const out = await new Promise((res, rej) => { off.oncomplete = e => res(e.renderedBuffer); const p = off.startRendering(); if(p && p.then) p.then(res, rej); });
     let peak = 0; for(let c=0;c<2;c++){ const d = out.getChannelData(c); for(let i=0;i<d.length;i++){ const v = Math.abs(d[i]); if(v>peak) peak=v; } }
     let fmt = $("#fmtSel").value; if(!/^wav/.test(fmt)) fmt = "wav24";
     let warn = "";
@@ -958,7 +980,7 @@ async function openStemFiles(files){
   if(!files.length) return;
   const list = Array.from(files).sort((a,b)=>a.name.localeCompare(b.name));
   try {
-    const ctx0 = new (window.AudioContext || window.webkitAudioContext)(); const first = await ctx0.decodeAudioData(await list[0].arrayBuffer()); ctx0.close();
+    const ctx0 = new (window.AudioContext || window.webkitAudioContext)(); const first = await decodeCompat(ctx0, await list[0].arrayBuffer()); ctx0.close();
     const sr = first.sampleRate; const tracks = [];
     for(const f of list){ const b = await decodeAt(await f.arrayBuffer(), sr); const id = "f" + tracks.length;
       const label = f.name.replace(/\.[^.]+$/,"").replace(/^\d+_/,""); const fam = guessFamily(label);
@@ -973,8 +995,8 @@ async function openProject(){
   try { const r = await api("/api/pick", {json:{kind:"project"}}); if(!r.path) return;
     const proj = await api("/api/project?path=" + encodeURIComponent(r.path));
     const sr = proj.report.sample_rate; const tracks = [];
-    for(const t of proj.tracks){ const resp = await fetch("/api/file?path=" + encodeURIComponent(t.file) + "&t=" + encodeURIComponent(S.token));
-      tracks.push(makeTrack({id:t.id, label:t.label, family:t.family, muted:t.muted, buffer: await decodeAt(await resp.arrayBuffer(), sr)})); }
+    for(const t of proj.tracks){
+      tracks.push(makeTrack({id:t.id, label:t.label, family:t.family, muted:t.muted, buffer: await loadPcm(t.file, sr)})); }
     S.result = {outdir: proj.folder, report: proj.report}; S.example = false; setTracks(tracks, sr);
     $("#resTitle").textContent = proj.name; $("#revealBtn").hidden = false; showReport(proj.report, proj.folder);
   } catch(e){ alertBox(e.message, e.hint); }
@@ -1005,7 +1027,7 @@ function showReport(rep, outdir){
 function loadExampleSession(){
   const sr = 44100, dur = 12, n = sr*dur; audioCtx(sr);
   let seed = 7; const rnd = () => (seed = (seed*16807) % 2147483647) / 2147483647 * 2 - 1;
-  const mk = (fn, pan=0) => { const b = new AudioBuffer({length:n, numberOfChannels:2, sampleRate:sr}); const L = b.getChannelData(0), R = b.getChannelData(1);
+  const mk = (fn, pan=0) => { const b = newBuffer(2, n, sr); const L = b.getChannelData(0), R = b.getChannelData(1);
     for(let i=0;i<n;i++){ const v = fn(i/sr, i); L[i] = v*(1-Math.max(0,pan)); R[i] = v*(1+Math.min(0,pan)); } return b; };
   const beat = .5, env = (t, per, off, dec) => { const x = ((t - off) % per + per) % per; return t >= off ? Math.exp(-x/dec) : 0; };
   const notes = [220, 261.63, 196, 246.94];

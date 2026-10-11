@@ -207,7 +207,14 @@ def test_api_token_and_job(song, tmp_path):
         snap = json.load(call(f"/api/jobs/{job['id']}"))
         f = snap["result"]["tracks"][0]["file"]
         assert call("/api/file?path=" + urllib.parse.quote(f)).status == 200
+        r = call("/api/pcm?path=" + urllib.parse.quote(f))
+        n, ch = int(r.headers["X-S4U-Frames"]), int(r.headers["X-S4U-Channels"])
+        pcm = np.frombuffer(r.read(), dtype="<f4").reshape(ch, n)
+        ref, _ = sf.read(f, dtype="float32", always_2d=True)
+        assert np.array_equal(pcm, ref.T) and int(r.headers["X-S4U-SR"]) == SR
         with pytest.raises(urllib.error.HTTPError):
             call("/api/file?path=" + urllib.parse.quote("/etc/passwd"))
+        with pytest.raises(urllib.error.HTTPError):
+            call("/api/pcm?path=" + urllib.parse.quote("/etc/passwd"))
     finally:
         httpd.shutdown()
