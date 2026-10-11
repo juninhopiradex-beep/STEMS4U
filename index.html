@@ -336,7 +336,8 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;bac
    ===================================================================== */
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
-const ORT_VER = "1.23.2", DEMUCS_WEB_VER = "1.0.2";
+// ORT 1.20.1: o WebGPU das versões 1.22+ exige APIs do Chrome 13x (falha em Macs com Catalina/Chrome antigo).
+const ORT_VER = "1.20.1", DEMUCS_WEB_VER = "1.0.2";
 
 const FAM_COLOR = {vocals:"--vocals", drums:"--drums", bass:"--bass", music:"--music", fx:"--fx", other:"--other"};
 const STEM_COLOR = {piano:"--piano"};
@@ -597,14 +598,15 @@ async function loadEngineResult(res){
 
 /* ------------------------------------------------------------------ separação: modo web */
 let webProc = null;
-async function loadWebModel(onPct){
+let webBuf = null;
+async function loadWebModel(onPct, useGpu){
   const ort = await import(`https://cdn.jsdelivr.net/npm/onnxruntime-web@${ORT_VER}/dist/ort.webgpu.min.mjs`);
   ort.env.wasm.wasmPaths = `https://cdn.jsdelivr.net/npm/onnxruntime-web@${ORT_VER}/dist/`;
-  ort.env.wasm.proxy = !("gpu" in navigator);
+  ort.env.wasm.proxy = false;
   const mod = await import(`https://cdn.jsdelivr.net/npm/demucs-web@${DEMUCS_WEB_VER}/src/index.js`);
   const url = mod.CONSTANTS.DEFAULT_MODEL_URL;
-  let buf = null, cache = null;
-  try { cache = await caches.open("stems4u-models-v1"); const hit = await cache.match(url); if(hit) buf = await hit.arrayBuffer(); } catch(e){}
+  let buf = webBuf, cache = null;
+  if(!buf) try { cache = await caches.open("stems4u-models-v1"); const hit = await cache.match(url); if(hit) buf = await hit.arrayBuffer(); } catch(e){}
   if(!buf){
     const r = await fetch(url); if(!r.ok) throw new Error("Não foi possível descarregar o modelo (" + r.status + ").");
     const total = +r.headers.get("Content-Length") || 172e6; const reader = r.body.getReader(); const parts = []; let got = 0;
@@ -612,8 +614,10 @@ async function loadWebModel(onPct){
     const blob = new Blob(parts); buf = await blob.arrayBuffer();
     try { if(cache) await cache.put(url, new Response(blob)); } catch(e){}
   }
-  const proc = new mod.DemucsProcessor({ort, sessionOptions:{executionProviders: ("gpu" in navigator) ? ["webgpu","wasm"] : ["wasm"]}});
-  await proc.loadModel(buf);
+  webBuf = buf;
+  const proc = new mod.DemucsProcessor({ort, sessionOptions:{executionProviders: useGpu ? ["webgpu","wasm"] : ["wasm"]}});
+  await proc.loadModel(buf.slice(0));
+  proc.usesGpu = useGpu;
   return proc;
 }
 async function runWeb(){
@@ -625,12 +629,25 @@ async function runWeb(){
     let L = mixBuf.getChannelData(0), R = mixBuf.numberOfChannels > 1 ? mixBuf.getChannelData(1) : mixBuf.getChannelData(0);
     const prev = +$("#prevSel").value;
     if(prev){ const n = prev*44100, s = Math.max(0, Math.min(Math.floor(L.length*.3), L.length-n)); L = L.slice(s, s+n); R = R.slice(s, s+n); }
-    if(!webProc){
-      onProgress({stage:"import", progress:.05, message:"A carregar o modelo HTDemucs (≈172 MB, fica em cache)", model:"HTDemucs v4 (ONNX)"});
-      webProc = await loadWebModel(p => onProgress({stage:"import", progress:.05 + p*.2, message:"A descarregar o modelo " + Math.round(p*100) + "%", model:"HTDemucs v4 (ONNX)"}));
+    const dl = p => onProgress({stage:"import", progress:.05 + p*.2, message:"A descarregar o modelo " + Math.round(p*100) + "%", model:"HTDemucs v4 (ONNX)"});
+    const attach = () => { webProc.onProgress = ({progress}) => onProgress({stage:"separate", progress:.25 + progress*.65, message:"A separar no " + (webProc.usesGpu ? "GPU (WebGPU)" : "CPU (WASM) — mais lento"), model:"HTDemucs v4 (ONNX)"}); };
+    let out, triedGpu = false;
+    try {
+      if(!webProc){
+        onProgress({stage:"import", progress:.05, message:"A carregar o modelo HTDemucs (≈172 MB, fica em cache)", model:"HTDemucs v4 (ONNX)"});
+        triedGpu = ("gpu" in navigator) && !S.noWebGpu;
+        webProc = await loadWebModel(dl, triedGpu);
+      }
+      triedGpu = webProc.usesGpu;
+      attach(); out = await webProc.separate(L, R);
+    } catch(gpuErr){
+      if(!triedGpu) throw gpuErr;   // falhou no WebGPU (ao carregar ou a correr): tenta em CPU
+      console.warn("WebGPU falhou, a usar WASM:", gpuErr);
+      S.noWebGpu = true; webProc = null;
+      onProgress({stage:"import", progress:.2, message:"WebGPU indisponível neste browser — a mudar para CPU", model:"HTDemucs v4 (ONNX)"});
+      webProc = await loadWebModel(dl, false);
+      attach(); out = await webProc.separate(L, R);
     }
-    webProc.onProgress = ({progress}) => onProgress({stage:"separate", progress:.25 + progress*.65, message:"A separar no " + (("gpu" in navigator) ? "GPU (WebGPU)" : "CPU (WASM)"), model:"HTDemucs v4 (ONNX)"});
-    const out = await webProc.separate(L, R);
     onProgress({stage:"reconstruct", progress:.92, message:"A calcular Other"});
     const sel = [...S.selected].filter(s => out[s]);
     const n = L.length, oL = new Float32Array(L), oR = new Float32Array(R);

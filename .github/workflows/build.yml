@@ -57,13 +57,13 @@ jobs:
         run: |
           source .venv/bin/activate
           pyinstaller packaging/stems4u.spec --noconfirm --distpath dist --workpath build
+      - run: ditto -c -k --keepParent dist/STEMS4U.app STEMS4U-macOS-Intel.zip
+      - uses: actions/upload-artifact@v4
+        with: { name: STEMS4U-macOS-Intel, path: STEMS4U-macOS-Intel.zip }
       - name: Verificar que corre em macOS 10.15
         run: bash packaging/check_macos_min.sh dist/STEMS4U.app 10.15
       - name: Teste de arranque do executável
         run: dist/STEMS4U.app/Contents/MacOS/STEMS4U info
-      - run: ditto -c -k --keepParent dist/STEMS4U.app STEMS4U-macOS-Intel.zip
-      - uses: actions/upload-artifact@v4
-        with: { name: STEMS4U-macOS-Intel, path: STEMS4U-macOS-Intel.zip }
 
   macos-arm:
     name: macOS Apple Silicon
@@ -76,10 +76,10 @@ jobs:
           pip install -r requirements.txt pyinstaller==6.11.1
           pip install demucs==4.0.1 --no-deps
       - run: pyinstaller packaging/stems4u.spec --noconfirm --distpath dist --workpath build
-      - run: dist/STEMS4U.app/Contents/MacOS/STEMS4U info
       - run: ditto -c -k --keepParent dist/STEMS4U.app STEMS4U-macOS-AppleSilicon.zip
       - uses: actions/upload-artifact@v4
         with: { name: STEMS4U-macOS-AppleSilicon, path: STEMS4U-macOS-AppleSilicon.zip }
+      - run: dist/STEMS4U.app/Contents/MacOS/STEMS4U info
 
   windows:
     name: Windows 10/11
@@ -92,8 +92,8 @@ jobs:
           pip install -r requirements.txt pyinstaller==6.11.1
           pip install demucs==4.0.1 --no-deps
       - run: pyinstaller packaging/stems4u.spec --noconfirm --distpath dist --workpath build
-      - run: dist\STEMS4U\STEMS4U.exe info
       - run: Compress-Archive -Path dist\STEMS4U -DestinationPath STEMS4U-Windows.zip
         shell: pwsh
       - uses: actions/upload-artifact@v4
         with: { name: STEMS4U-Windows, path: STEMS4U-Windows.zip }
+      - run: dist\STEMS4U\STEMS4U.exe info
