@@ -29,6 +29,34 @@ def _bar(e: dict):
         print()
 
 
+def selftest() -> int:
+    """Corre o caminho real de separação (Demucs + PyTorch + chunking + export) com o modelo de
+    teste do próprio Demucs, que não precisa de download. Falha se faltar alguma biblioteca."""
+    import tempfile
+    from pathlib import Path
+
+    import numpy as np
+
+    from . import audio_io, metrics
+    from .models.backends import DemucsSeparator
+    from .models.registry import ModelSpec
+
+    spec = ModelSpec({"id": "selftest", "name": "Demucs (teste)", "demucs_name": "demucs_unittest",
+                      "outputs": {"drums": "drums", "bass": "bass", "other": "other", "vocals": "vocals"},
+                      "sample_rate": 44100, "files": [], "backend": "demucs"})
+    x = (np.random.default_rng(0).standard_normal((2, 44100 * 40)) * 0.1).astype(np.float32)
+    out = DemucsSeparator(spec, "cpu").separate(x, "fast", lambda p: None, lambda: False)
+    assert set(out) == {"drums", "bass", "other", "vocals"}, out.keys()
+    assert all(v.shape == x.shape for v in out.values())
+    with tempfile.TemporaryDirectory() as d:
+        r = audio_io.write(Path(d) / "t", out["vocals"], 44100, "wav24")
+        y, sr = audio_io.load(r["path"])
+        assert y.shape == x.shape and sr == 44100
+    metrics.analyze(x, 44100)
+    print("SELFTEST OK — Demucs, PyTorch, chunking, export e métricas a funcionar")
+    return 0
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="stems4u", description="STEMS4U by Piradex — separação de stems")
     ap.add_argument("--version", action="version", version=f"STEMS4U {__version__}")
@@ -51,6 +79,7 @@ def main(argv=None):
     m.add_argument("file", nargs="?")
 
     sub.add_parser("info", help="hardware e stems disponíveis")
+    sub.add_parser("selftest", help="verifica o motor completo (usado no CI sobre a app empacotada)")
     sub.add_parser("app", help="abrir a aplicação")
     sv = sub.add_parser("serve", help="só o motor (API local)")
     sv.add_argument("--port", type=int, default=8765)
@@ -69,6 +98,8 @@ def main(argv=None):
             print(f"Abre: {url}")
             while True:
                 time.sleep(3600)
+        if a.cmd == "selftest":
+            return selftest()
         if a.cmd == "info":
             hw = hardware.detect()
             print(json.dumps(hw, indent=2, ensure_ascii=False))

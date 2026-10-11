@@ -71,7 +71,7 @@ jobs:
         continue-on-error: true
         run: bash packaging/ci_run.sh bash packaging/check_macos_min.sh dist/STEMS4U.app 10.15
       - name: Teste de arranque do executável
-        run: bash packaging/ci_run.sh dist/STEMS4U.app/Contents/MacOS/STEMS4U info
+        run: bash packaging/ci_run.sh dist/STEMS4U.app/Contents/MacOS/STEMS4U selftest
       - name: Publicar em Releases (só se os testes passaram)
         run: bash packaging/publish_release.sh STEMS4U-macOS-Intel.zip
 
@@ -89,7 +89,7 @@ jobs:
       - run: ditto -c -k --keepParent dist/STEMS4U.app STEMS4U-macOS-AppleSilicon.zip
       - uses: actions/upload-artifact@v4
         with: { name: STEMS4U-macOS-AppleSilicon, path: STEMS4U-macOS-AppleSilicon.zip }
-      - run: bash packaging/ci_run.sh dist/STEMS4U.app/Contents/MacOS/STEMS4U info
+      - run: bash packaging/ci_run.sh dist/STEMS4U.app/Contents/MacOS/STEMS4U selftest
       - run: bash packaging/publish_release.sh STEMS4U-macOS-AppleSilicon.zip
 
   windows:
@@ -107,7 +107,7 @@ jobs:
         shell: pwsh
       - uses: actions/upload-artifact@v4
         with: { name: STEMS4U-Windows, path: STEMS4U-Windows.zip }
-      - run: bash packaging/ci_run.sh dist/STEMS4U/STEMS4U.exe info
+      - run: bash packaging/ci_run.sh dist/STEMS4U/STEMS4U.exe selftest
         shell: bash
       - run: bash packaging/publish_release.sh STEMS4U-Windows.zip
         shell: bash

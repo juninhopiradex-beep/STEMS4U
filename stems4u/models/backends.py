@@ -52,6 +52,26 @@ class Separator:
         raise NotImplementedError
 
 
+def prepare_demucs_imports() -> None:
+    """O Demucs só precisa de openunmix.filtering (filtro de Wiener). Importar o pacote openunmix
+    completo arrasta o torchaudio, que traz bibliotecas nativas desnecessárias e que falham na app
+    empacotada. Regista um pacote 'openunmix' vazio e carrega apenas o submódulo filtering."""
+    import importlib
+    import importlib.util
+    import sys
+    import types
+    if "openunmix.filtering" in sys.modules:
+        return
+    spec = importlib.util.find_spec("openunmix")
+    if spec is None or not spec.submodule_search_locations:
+        raise UserError("Componente openunmix em falta.", "Reinstala o STEMS4U.", "demucs_missing")
+    pkg = types.ModuleType("openunmix")
+    pkg.__path__ = list(spec.submodule_search_locations)
+    pkg.__spec__ = spec
+    sys.modules["openunmix"] = pkg
+    importlib.import_module("openunmix.filtering")
+
+
 class DemucsSeparator(Separator):
     _cache: dict[str, object] = {}
 
@@ -59,6 +79,7 @@ class DemucsSeparator(Separator):
         key = f"{self.spec.id}@{self.device_pref}"
         if key not in self._cache:
             try:
+                prepare_demucs_imports()
                 from demucs.pretrained import get_model
             except ImportError as exc:
                 raise UserError("Pacote demucs em falta.", "pip install demucs==4.0.1 --no-deps",
@@ -76,6 +97,7 @@ class DemucsSeparator(Separator):
 
     def separate(self, audio, quality, progress, should_stop):
         import torch
+        prepare_demucs_imports()
         from demucs.apply import apply_model
 
         model, dev = self._model()
