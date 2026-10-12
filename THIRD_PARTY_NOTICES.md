@@ -9,6 +9,7 @@ Os modelos NÃO vêm no instalador; cada modelo instalado tem um `PROVENANCE.jso
 |---|---|---|---|---|
 | HTDemucs v4, HTDemucs FT, HTDemucs 6s | Simon Rouard, Francisco Massa, Alexandre Défossez — Meta AI | MIT | MIT | Verificada — https://github.com/facebookresearch/demucs |
 | HTDemucs ONNX (versão web) | Conversão dos pesos oficiais (demucs-web, timcsy) | MIT | MIT | Verificada |
+| DrumSep 6 peças (MDX23C) | aufr33, jarredou (pesos); KUIELab e ZFTurbo (arquitectura); openmirlab/mdxnet-infer (código de inferência, copiado em `stems4u/models/mdx23c/`) | MIT | Não documentada formalmente | Uso pessoal / build de desenvolvimento |
 | DrumSep | inagoy | MIT | MIT segundo a model card da conversão ONNX | A confirmar no repositório original |
 | MelBand Roformer Karaoke | aufr33, viperx | MIT (Music-Source-Separation-Training, ZFTurbo) | Não declarada | Só build de desenvolvimento |
 | MelBand Roformer De-Reverb | anvuew | MIT | Não declarada | Só build de desenvolvimento |

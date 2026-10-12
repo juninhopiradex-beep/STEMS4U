@@ -81,7 +81,18 @@ class Engine:
             if not ok:
                 producers = [m for m in self.registry.models.values() if s.id in m.outputs]
                 reason = producers[0].usable()[1] if producers else "Sem modelo."
-            cats.append(s.to_dict() | {"available": ok, "reason": reason, "models": avail.get(s.id, [])})
+            install = None
+            if not ok:
+                for m in self.registry.models.values():
+                    if (s.id in m.outputs and not m.is_installed() and m.backend in ("demucs", "mdx23c")
+                            and m.files and all(f.get("url") for f in m.files)
+                            and (build_profile() != "public" or m.license_ok_for_public)):
+                        install = {"id": m.id, "name": m.name, "size_mb": sum(f.get("size_mb", 0) for f in m.files),
+                                   "license": m.license.get("status")}
+                        reason = "Instala o modelo para activar."
+                        break
+            cats.append(s.to_dict() | {"available": ok, "reason": reason, "models": avail.get(s.id, []),
+                                       "install": install})
         return {"app": "STEMS4U by Piradex", "version": __version__, "build": build_profile(),
                 "hardware": self.hw(), "categories": cats, "roadmap": stems.ROADMAP,
                 "models": self.registry.list(), "formats": list(audio_io.EXPORT_FORMATS),

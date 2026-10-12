@@ -53,6 +53,16 @@ def selftest() -> int:
         y, sr = audio_io.load(r["path"])
         assert y.shape == x.shape and sr == 44100
     metrics.analyze(x, 44100)
+    # Rede MDX23C (DrumSep 6 peças) com pesos aleatórios: confirma que o código e o STFT estão na app.
+    import torch
+    from .models.mdx23c.config import MDX23CConfig
+    from .models.mdx23c.model import TFC_TDF_net
+    cfg = MDX23CConfig.drumsep_6stem()
+    net = TFC_TDF_net(cfg, torch.device("cpu")).eval()
+    chunk = cfg.audio.hop_length * (cfg.inference.dim_t - 1)
+    with torch.no_grad():
+        y = net(torch.zeros(1, 2, chunk))
+    assert tuple(y.shape[-2:]) == (2, chunk), y.shape
     print("SELFTEST OK — Demucs, PyTorch, chunking, export e métricas a funcionar")
     return 0
 

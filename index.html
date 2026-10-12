@@ -111,6 +111,11 @@ details.roadmap li b{color:var(--fg-2);font-weight:600}
 .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .row > *{min-width:0}
 select.sel{-webkit-appearance:none;appearance:none;background:var(--panel-2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23A6ACB7' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 10px center;border:1px solid var(--line);border-radius:8px;padding:7px 28px 7px 9px;font-size:12.5px;flex:1;color:var(--fg)}
+.install-row{display:flex;flex-direction:column;gap:6px;margin-left:14px}
+.install-btn{display:block;text-align:left;padding:9px 12px;border:1px dashed var(--line-2);border-radius:9px;background:transparent;width:100%}
+.install-btn b{display:block;font-size:12.5px;color:var(--fg)}
+.install-btn span{display:block;font-size:11px;color:var(--fg-3);margin-top:2px}
+.install-btn:hover{border-color:var(--fg-2)}
 .setup{display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:10px;border:1px solid var(--line-2);background:var(--panel-2)}
 .setup strong{font-size:14px}
 .setup p{margin:0;font-size:12px;color:var(--fg-2);line-height:1.5}
@@ -442,20 +447,45 @@ function firstRun(){
   host.insertBefore(card, host.firstChild);
   $("#setupBtn").onclick = installBase;
 }
+// Instala modelos em segundo plano e acompanha o progresso. onUpdate(pct, texto) é chamado durante o download.
+async function installModels(ids, onUpdate){
+  await api("/api/models/install", {json:{ids}});
+  return new Promise((resolve, reject) => {
+    const poll = async () => {
+      let st; try { st = await api("/api/models/progress"); } catch(e){ setTimeout(poll, 1500); return; }
+      const pct = Math.round((st.pct||0)*100);
+      onUpdate(st.pct||0, (st.current ? st.current + " — " : "") + pct + "%");
+      if(st.error){ const e = new Error(st.error.message); e.hint = st.error.hint; reject(e); return; }
+      if(st.done){ resolve(); return; }
+      setTimeout(poll, 700);
+    };
+    poll();
+  });
+}
 async function installBase(){
   const btn = $("#setupBtn"), bar = $("#setupBar"), msg = $("#setupMsg");
   btn.disabled = true; btn.textContent = "A descarregar…"; bar.hidden = false; msg.hidden = false; msg.textContent = "A ligar ao servidor dos modelos…";
-  try { await api("/api/models/install", {json:{ids:["htdemucs","htdemucs_6s"]}}); }
-  catch(e){ btn.disabled = false; btn.textContent = "Tentar de novo"; msg.textContent = e.message + " " + (e.hint||""); return; }
-  const poll = async () => {
-    let st; try { st = await api("/api/models/progress"); } catch(e){ setTimeout(poll, 1500); return; }
-    $("i", bar).style.width = Math.round((st.pct||0)*100) + "%";
-    msg.textContent = (st.current ? st.current + " — " : "") + Math.round((st.pct||0)*100) + "%";
-    if(st.error){ btn.disabled = false; btn.textContent = "Tentar de novo"; msg.textContent = st.error.message + " " + (st.error.hint||""); return; }
-    if(st.done){ await refreshInfo(); ["vocals","drums","bass"].forEach(x => S.selected.add(x)); renderPicker(); updateGo(); toast("Modelos instalados — escolhe o que extrair"); return; }
-    setTimeout(poll, 700);
-  };
-  poll();
+  try {
+    await installModels(["htdemucs","htdemucs_6s"], (p, t) => { $("i", bar).style.width = Math.round(p*100) + "%"; msg.textContent = t; });
+    await refreshInfo(); ["vocals","drums","bass"].forEach(x => S.selected.add(x)); renderPicker(); updateGo(); toast("Modelos instalados — escolhe o que extrair");
+  } catch(e){ btn.disabled = false; btn.textContent = "Tentar de novo"; msg.textContent = e.message + " " + (e.hint||""); }
+}
+// Botão "Instalar …" por baixo de uma família (ex.: peças de bateria) quando há modelo descarregável.
+function installRow(cats){
+  const seen = {}, list = cats.filter(c => c.install && !seen[c.install.id] && (seen[c.install.id] = true));
+  if(!list.length) return null;
+  const wrap = document.createElement("div"); wrap.className = "install-row";
+  list.forEach(c => {
+    const m = c.install, names = cats.filter(x => x.install && x.install.id === m.id).map(x => x.label).join(", ");
+    const b = document.createElement("button"); b.type = "button"; b.className = "ghost install-btn";
+    b.innerHTML = `<b>Instalar ${esc(m.name)}</b><span>${esc(names)} · ≈${m.size_mb} MB${m.license !== "verified" ? " · licença dos pesos a confirmar (uso pessoal)" : ""}</span>`;
+    b.onclick = async () => { b.disabled = true;
+      try { await installModels([m.id], (p, t) => { b.innerHTML = `<b>A descarregar ${esc(m.name)}</b><span>${esc(t)}</span>`; });
+        await refreshInfo(); toast(m.name + " instalado"); }
+      catch(e){ b.disabled = false; b.innerHTML = `<b>Tentar de novo</b><span>${esc(e.message)} ${esc(e.hint||"")}</span>`; } };
+    wrap.appendChild(b);
+  });
+  return wrap;
 }
 
 /* ------------------------------------------------------------------ selector de stems */
@@ -483,6 +513,7 @@ function renderPicker(){
         const grid = document.createElement("div"); grid.className = "fam-row";
         kids.forEach(k => grid.appendChild(btn(k, "child")));
         box.appendChild(grid);
+        if(S.mode === "engine"){ const row = installRow(kids); if(row) box.appendChild(row); }
       } else singles.push(r);
     });
     if(singles.length){ const grid = document.createElement("div"); grid.className = "fam-row"; singles.forEach(r => grid.appendChild(btn(r, ""))); box.appendChild(grid); }
@@ -1070,7 +1101,8 @@ function modelsModal(){
   }).join("");
   openModal("Gestor de modelos", `<div class="mlist">${rows}</div>`);
   $$("[data-inst]").forEach(b => b.onclick = async () => { b.disabled = true; b.textContent = "A descarregar…";
-    try { await api("/api/models/install", {json:{id:b.dataset.inst}}); await refreshInfo(); modelsModal(); toast("Modelo instalado"); } catch(e){ b.textContent = "Falhou"; alertBox(e.message, e.hint); } });
+    try { await installModels([b.dataset.inst], (p, t) => { b.textContent = t; }); await refreshInfo(); modelsModal(); toast("Modelo instalado"); }
+    catch(e){ b.disabled = false; b.textContent = "Tentar de novo"; alertBox(e.message, e.hint); } });
   $$("[data-rm]").forEach(b => b.onclick = async () => { await api("/api/models/remove", {json:{id:b.dataset.rm}}); await refreshInfo(); modelsModal(); });
 }
 async function refreshInfo(){ S.info = await api("/api/info"); S.cats = S.info.categories; renderPicker(); updateGo(); }

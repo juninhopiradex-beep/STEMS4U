@@ -85,7 +85,7 @@ def available_stems(reg: Registry) -> dict[str, list[str]]:
 def _pick(models: list[ModelSpec], quality: str) -> ModelSpec:
     # Preferência: (1) tier inclui o modo pedido, (2) modelo mais especializado (menos saídas),
     # (3) o mais lento — em modelos da mesma família, mais lento = mais passagens = melhor.
-    return max(models, key=lambda m: (quality in m.tiers, -len(m.outputs), m.speed_cpu_rt))
+    return max(models, key=lambda m: (quality in m.tiers, m.raw.get("priority", 0), -len(m.outputs), m.speed_cpu_rt))
 
 
 def plan(selected: list[str], quality: str, reg: Registry) -> list[Stage]:

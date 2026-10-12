@@ -167,9 +167,78 @@ class AudioSeparatorBackend(Separator):
             shutil.rmtree(tmp, ignore_errors=True)
 
 
+class MDX23CSeparator(Separator):
+    """MDX23C / TFC-TDF v3 (DrumSep 6 peças de aufr33 & jarredou). Código da rede: cópia MIT
+    do Music-Source-Separation-Training (ZFTurbo) via mdxnet-infer, em models/mdx23c/."""
+    _cache: dict[str, object] = {}
+    # nº de janelas sobrepostas por amostra: 2 já evita costuras; 4/8 só melhoram ligeiramente e custam 2-4x.
+    OVERLAP = {"fast": 2, "balanced": 2, "high": 4, "ultra": 8}
+
+    def _model(self):
+        import torch
+        key = f"{self.spec.id}@{self.device_pref}"
+        if key not in self._cache:
+            from .mdx23c.config import MDX23CConfig
+            from .mdx23c.model import TFC_TDF_net
+            cfg = MDX23CConfig.from_yaml(Path(self.spec.dir) / self.spec.config_file)
+            # MPS não suporta todas as operações de STFT desta rede: GPU só com CUDA, senão CPU.
+            dev = torch_device("cuda" if self.device_pref in ("auto", "cuda") else "cpu")
+            if dev.type == "mps":
+                dev = torch.device("cpu")
+            log.info("A carregar %s em %s", self.spec.id, dev)
+            net = TFC_TDF_net(cfg, dev)
+            state = torch.load(Path(self.spec.dir) / self.spec.files[0]["name"], map_location="cpu", weights_only=False)
+            if isinstance(state, dict) and "state_dict" in state:
+                state = state["state_dict"]
+            net.load_state_dict(state)
+            net.to(dev).eval()
+            self._cache.clear()
+            self._cache[key] = (net, cfg, dev)
+        return self._cache[key]
+
+    def separate(self, audio, quality, progress, should_stop):
+        import torch
+        net, cfg, dev = self._model()
+        names = list(cfg.training.instruments)
+        overlap = self.OVERLAP.get(quality, 4)
+        chunk = cfg.audio.hop_length * (cfg.inference.dim_t - 1)
+        hop = chunk // overlap
+        total = max(1, int(audio.shape[-1] * 1.07 / hop) + 2 * overlap)  # janelas previstas (com sobreposição dos blocos)
+        done = [0]
+
+        def run(block: np.ndarray) -> dict[str, np.ndarray]:
+            mix = torch.from_numpy(np.ascontiguousarray(block, dtype=np.float32))
+            n = mix.shape[1]
+            pad = hop - (n - chunk) % hop if n > chunk else chunk - n + hop
+            mix = torch.cat([torch.zeros(2, chunk - hop), mix, torch.zeros(2, pad + chunk - hop)], 1)
+            chunks = mix.unfold(1, chunk, hop).transpose(0, 1)
+            acc = torch.zeros(len(names), *mix.shape)
+            with torch.no_grad():
+                for i in range(chunks.shape[0]):
+                    if should_stop():
+                        raise Cancelled()
+                    acc[..., i * hop:i * hop + chunk] += net(chunks[i:i + 1].to(dev))[0].cpu()
+                    done[0] += 1
+                    progress(min(0.99, done[0] / total))
+            out = (acc[..., chunk - hop:chunk - hop + n] / overlap).numpy()
+            stems = {nm: out[k] for k, nm in enumerate(names)}
+            res = {}
+            for stem, src in self.spec.outputs.items():
+                srcs = src if isinstance(src, list) else [src]
+                res[stem] = fit(sum(stems[x] for x in srcs), block.shape[-1]).astype(np.float32)
+            return res
+
+        out = process_chunked(audio, self.spec.sample_rate, run, chunk_s=45.0, overlap_s=3.0,
+                              progress=None, should_stop=should_stop)
+        progress(1.0)
+        return out
+
+
 def make(spec: ModelSpec, device: str = "auto") -> Separator:
     if spec.backend == "demucs":
         return DemucsSeparator(spec, device)
+    if spec.backend == "mdx23c":
+        return MDX23CSeparator(spec, device)
     if spec.backend == "audio_separator":
         return AudioSeparatorBackend(spec, device)
     raise UserError(f"Backend desconhecido: {spec.backend}")
