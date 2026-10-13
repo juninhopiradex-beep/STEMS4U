@@ -211,6 +211,21 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;bac
 .hwgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;padding:16px}
 .toast{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:9px;font-size:13px;z-index:60;max-width:calc(100% - 32px)}
 @media (max-width:640px){:root{--hdr-w:178px}.faders{grid-template-columns:minmax(0,1fr)}.faders output{display:none}.top{padding:10px 16px}.by{display:none}}
+/* ---------- ecrã de senha (mesmo protocolo dos plugins Piradex) ---------- */
+.login{position:fixed;inset:0;z-index:70;display:grid;place-items:center;padding:16px;background:rgba(5,7,10,.82);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.login-card{width:min(420px,100%);background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:28px 26px 22px;display:flex;flex-direction:column;gap:14px}
+.login-card .logo{font-size:22px}
+.login-card h2{margin:6px 0 0;font:600 18px/1.25 var(--f-display)}
+.login-card p{margin:0;color:var(--fg-2)}
+.login-card form{display:flex;flex-direction:column;gap:12px;margin:0}
+.login-pw{height:46px;border-radius:10px;border:1px solid var(--line-2);background:var(--wave-bg);padding:0 14px;font:500 15px var(--f-mono);letter-spacing:.06em;text-transform:uppercase}
+.login-pw:focus{outline:2px solid var(--accent);outline-offset:1px}
+.login-chk{display:flex;align-items:center;gap:8px;color:var(--fg-2);cursor:pointer}
+.login-chk input{width:16px;height:16px;margin:0;accent-color:var(--accent)}
+.login-err{min-height:18px;color:var(--bad);font-weight:600}
+.login-foot{font-size:12px;color:var(--fg-3)!important;border-top:1px solid var(--line);padding-top:12px}
+.login-foot a{color:var(--fg-2)}
+.chip.lic-trial{color:var(--warn);border-color:rgba(245,197,66,.35)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 
@@ -226,6 +241,7 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;bac
   <div class="spacer"></div>
   <span class="chip" id="modeChip"><span class="dot" id="modeDot"></span><span id="modeTxt">A ligar…</span></span>
   <button class="chip" id="hwChip" type="button" title="Hardware detectado">—</button>
+  <button class="chip" id="licChip" type="button" title="Licença" hidden>—</button>
   <button class="chip" id="modelsBtn" type="button">Modelos</button>
 </header>
 
@@ -333,6 +349,18 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;bac
   </section>
 </main>
 
+<div class="login" id="login" hidden><div class="login-card" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+  <div class="logo" aria-label="STEMS4U"><span class="bars" aria-hidden="true"><i style="height:7px;background:var(--vocals)"></i><i style="height:15px;background:var(--drums)"></i><i style="height:10px;background:var(--bass)"></i><i style="height:13px;background:var(--music)"></i></span><span>STEMS4U</span></div>
+  <h2 id="loginTitle">Introduz a tua senha</h2>
+  <p>Senha master ou senha beta do STEMS4U by Piradex.</p>
+  <form id="loginForm" autocomplete="off">
+    <input class="login-pw" id="loginPw" type="password" spellcheck="false" autocapitalize="characters" placeholder="S4U-XXXX-XXXX-XXXX" aria-label="Senha" required>
+    <label class="login-chk"><input type="checkbox" id="loginRemember" checked> Lembrar neste computador</label>
+    <p class="login-err" id="loginErr" role="alert"></p>
+    <button class="go" type="submit" id="loginBtn">Entrar</button>
+  </form>
+  <p class="login-foot">As senhas beta valem até ao fim do dia da validade. Não tens senha? <a href="https://www.beatfreakstudio.com/loja" target="_blank" rel="noopener">beatfreakstudio.com/loja</a></p>
+</div></div>
 <div class="modal" id="modal" hidden><div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
   <div class="modal-h"><h2 id="modalTitle"></h2><button class="ghost" id="modalClose" type="button">Fechar</button></div>
   <div id="modalBody"></div></div></div>
@@ -404,6 +432,88 @@ async function api(path, opts={}){
   return data;
 }
 
+/* ------------------------------------------------------------------ senha (master + beta)
+   Mesmo protocolo do ANALYSER, MIXSPACE e DELEX: só salt + hash PBKDF2-HMAC-SHA256 (60 000 iterações).
+   Na app quem decide é o motor (/api/license); na versão web a verificação é feita aqui, com as mesmas chaves. */
+const S4U_KEYS = [{"id": "master", "kind": "master", "salt": "e4d0c6ae252f48796a9362157c8f0ee5", "hash": "09775cde9c25bd6f2083e55dc55b2f09e8ae0ac163a80c65b2f39e92e92d7251", "exp": null}, {"id": "beta-01", "kind": "trial", "salt": "a0000d6756060e9bbf4d46dc886e7c9b", "hash": "0da075dee600e9914c4026d6dafcdab958164aa6c77cea663add1062cbbc0d8b", "exp": "2026-11-01"}, {"id": "beta-02", "kind": "trial", "salt": "d310eb7e3160e996f52f79cb765506c7", "hash": "53f9d6f6904535e5e4d94f5724ed9229d4936275a6c53a73fc3a07026e3411d7", "exp": "2026-11-01"}, {"id": "beta-03", "kind": "trial", "salt": "557b1b4f431aa5e7094976f19c339812", "hash": "7c6389aea2aca53d866ca8cae37b13a1bd268dd315284d05723d1ca5e3b9f627", "exp": "2026-11-01"}, {"id": "beta-04", "kind": "trial", "salt": "41dba5fc6687664bdf2fdf939a4820fa", "hash": "b13443a3d84c513b5d8a9d1e3f41801053eee21252e6d848212a8d1a59cfd96a", "exp": "2026-11-01"}, {"id": "beta-05", "kind": "trial", "salt": "ff06021fba2ead33e067aef9df9ee6aa", "hash": "541ccbaccbedaac2a8351a00fed56757c3b3a3e247dd740a8be865a856d7aecd", "exp": "2026-11-01"}, {"id": "beta-06", "kind": "trial", "salt": "ebe2fc47442bab9a8e437ac707d0484d", "hash": "4aca321d87fa46551b15fea908cdc1813d24284b2f876cc77ce39d6d660522c4", "exp": "2026-11-01"}, {"id": "beta-07", "kind": "trial", "salt": "dc87b8e88d62a13e12cfdede624210de", "hash": "81fdeed1f950b297956d2dc4c41aef4b3f9d1c27e0283bc8421991f7804bf911", "exp": "2026-11-01"}, {"id": "beta-08", "kind": "trial", "salt": "3c4ca91abbf65864bd7d6cc5efa29bc7", "hash": "7158fd608947f5c00b76ea635118a827fb372b5eb7721d7093c42a1a8eb5aa94", "exp": "2026-11-01"}, {"id": "beta-09", "kind": "trial", "salt": "84cc033707763835dcc9b45ca3a55873", "hash": "6121643db9730af70ed94f2c44116f314b4c0674a999eeeda7ef4f450d3e550d", "exp": "2026-11-01"}, {"id": "beta-10", "kind": "trial", "salt": "98e5ba0c486973afc3cca54667511e77", "hash": "a8b3b31a01586698852a3a5863da33341d436acbbc70ed0215cfcb1e894d853f", "exp": "2026-11-01"}]; // <<< CHAVES
+const LIC = {status: {unlocked:false, kind:null, expires:null, label:"Sem sessão"}};
+function hexToBytes(h){ const a = new Uint8Array(h.length/2); for(let i=0;i<a.length;i++) a[i] = parseInt(h.substr(i*2,2),16); return a; }
+function bytesToHex(b){ return Array.from(new Uint8Array(b), x => x.toString(16).padStart(2,"0")).join(""); }
+async function sha256Hex(str){ return bytesToHex(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str))); }
+async function pbkdf2Hex(pw, saltHex){
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(pw), {name:"PBKDF2"}, false, ["deriveBits"]);
+  return bytesToHex(await crypto.subtle.deriveBits({name:"PBKDF2", hash:"SHA-256", salt:hexToBytes(saltHex), iterations:60000}, key, 256));
+}
+function keyExpired(k){ if(k.kind !== "trial" || !k.exp) return false; const [y,m,d] = k.exp.split("-").map(Number); return Date.now() > new Date(y, m-1, d, 23, 59, 59).getTime(); }
+function keyStatus(k){
+  if(!k) return {unlocked:false, kind:null, expires:null, label:"Sem sessão"};
+  if(k.kind === "master") return {unlocked:true, kind:"master", expires:null, label:"Licença completa"};
+  const [y,m,d] = k.exp.split("-"); return {unlocked:true, kind:"trial", expires:k.exp, label:`BETA · válida até ${d}/${m}/${y}`};
+}
+function webDevice(){ let d = store.get("dev", null); if(!d){ d = bytesToHex(crypto.getRandomValues(new Uint8Array(16))); store.set("dev", d); } return d; }
+async function webTokenFor(k){ return sha256Hex(webDevice() + "|" + k.id + "|" + k.hash + "|STEMS4U-WEB"); }
+async function webAutoUnlock(){
+  const st = store.get("lic", null); if(!st || !st.key || !window.crypto || !crypto.subtle) return null;
+  const k = S4U_KEYS.find(x => x.id === st.key); if(!k || keyExpired(k)) return null;
+  return (await webTokenFor(k)) === st.token ? k : null;
+}
+async function refreshLicense(){
+  if(S.mode === "engine"){ try { LIC.status = await api("/api/license"); } catch(e){} }
+  else if(LIC.key){ if(keyExpired(LIC.key)){ LIC.key = null; store.set("lic", null); } LIC.status = keyStatus(LIC.key); }
+  renderLicChip();
+  if(!LIC.status.unlocked) showLogin();
+}
+function renderLicChip(){
+  const c = $("#licChip"); const st = LIC.status;
+  c.hidden = !st.unlocked; c.textContent = st.label; c.classList.toggle("lic-trial", st.kind === "trial");
+}
+function showLogin(msg){
+  $("#login").hidden = false; $("#loginErr").textContent = msg || "";
+  setTimeout(() => $("#loginPw").focus(), 30);
+}
+async function submitLogin(ev){
+  ev.preventDefault();
+  const pw = $("#loginPw").value.trim().toUpperCase(), remember = $("#loginRemember").checked, btn = $("#loginBtn");
+  if(!pw) return;
+  btn.disabled = true; btn.textContent = "A verificar…"; $("#loginErr").textContent = "";
+  try {
+    if(S.mode === "engine"){
+      try { const r = await api("/api/license/unlock", {json:{password: pw, remember}}); LIC.status = r.status; }
+      catch(e){ throw new Error(e.message || "Senha errada."); }
+    } else {
+      if(!window.crypto || !crypto.subtle) throw new Error("Este browser não consegue verificar a senha. Abre a página em https.");
+      let found = null, expired = false;
+      for(const k of S4U_KEYS){ if(await pbkdf2Hex(pw, k.salt) === k.hash){ if(keyExpired(k)) expired = true; else if(!found) found = k; } }
+      if(!found){ await new Promise(r => setTimeout(r, 400)); throw new Error(expired ? "Esta senha beta já expirou." : "Senha errada."); }
+      LIC.key = found; LIC.status = keyStatus(found);
+      store.set("lic", remember ? {key: found.id, token: await webTokenFor(found)} : null);
+    }
+    $("#login").hidden = true; $("#loginPw").value = ""; renderLicChip();
+    toast("Desbloqueado · " + LIC.status.label);
+  } catch(e){ $("#loginErr").textContent = e.message; $("#loginPw").select(); }
+  finally { btn.disabled = false; btn.textContent = "Entrar"; }
+}
+function licModal(){
+  openModal("Licença", `<div style="padding:16px;display:flex;flex-direction:column;gap:14px">
+    <div><div class="muted">Estado</div><div style="font:600 16px var(--f-display);margin-top:4px">${esc(LIC.status.label)}</div></div>
+    <p class="muted" style="margin:0">Terminar a sessão apaga o acesso guardado neste computador. Vais precisar da senha para voltar a entrar.</p>
+    <button class="ghost" type="button" id="licLogout" style="align-self:flex-start">Terminar sessão neste computador</button></div>`);
+  $("#licLogout").onclick = async () => {
+    if(S.mode === "engine"){ try { LIC.status = await api("/api/license/lock", {json:{}}); } catch(e){} }
+    else { LIC.key = null; store.set("lic", null); LIC.status = keyStatus(null); }
+    closeModal(); renderLicChip(); showLogin();
+  };
+}
+async function initLicense(){
+  $("#loginForm").onsubmit = submitLogin; $("#licChip").onclick = licModal;
+  if(S.mode === "engine") LIC.status = (S.info && S.info.license) || LIC.status;
+  else { LIC.key = await webAutoUnlock().catch(() => null); LIC.status = keyStatus(LIC.key); }
+  renderLicChip();
+  if(!LIC.status.unlocked) showLogin();
+  setInterval(refreshLicense, 60000);
+}
+function requireLicense(){ if(LIC.status.unlocked) return true; showLogin("Introduz a senha para continuar."); return false; }
+
 /* ------------------------------------------------------------------ arranque */
 async function boot(){
   S.token = new URLSearchParams(location.search).get("t");
@@ -435,6 +545,7 @@ async function boot(){
   renderPicker(); renderQuality(); bindUI(); updateGo();
   if(S.mode === "web") loadExampleSession();
   renderTracks();
+  await initLicense();
 }
 function firstRun(){
   // Sem modelos instalados nada pode ser seleccionado: mostra um cartão claro no lugar das opções.
@@ -449,6 +560,7 @@ function firstRun(){
 }
 // Instala modelos em segundo plano e acompanha o progresso. onUpdate(pct, texto) é chamado durante o download.
 async function installModels(ids, onUpdate){
+  if(!requireLicense()) throw new Error("Introduz a senha para continuar.");
   await api("/api/models/install", {json:{ids}});
   return new Promise((resolve, reject) => {
     const poll = async () => {
@@ -463,6 +575,7 @@ async function installModels(ids, onUpdate){
   });
 }
 async function installBase(){
+  if(!requireLicense()) return;
   const btn = $("#setupBtn"), bar = $("#setupBar"), msg = $("#setupMsg");
   btn.disabled = true; btn.textContent = "A descarregar…"; bar.hidden = false; msg.hidden = false; msg.textContent = "A ligar ao servidor dos modelos…";
   try {
@@ -598,6 +711,7 @@ function showFile(info){
 
 /* ------------------------------------------------------------------ separação: motor local */
 async function runEngine(){
+  if(!requireLicense()) return;
   clearAlerts();
   const body = {input: S.file.path, stems: [...S.selected], outdir: S.outdir, quality: S.quality, fmt: $("#fmtSel").value,
                 preview_seconds: (+$("#prevSel").value) || null};
@@ -681,6 +795,7 @@ async function loadWebModel(onPct, useGpu){
   return proc;
 }
 async function runWeb(){
+  if(!requireLicense()) return;
   clearAlerts(); S.job = {status:"processing"}; startProgress();
   try {
     onProgress({stage:"import", progress:.02, message:"A descodificar a mistura"});

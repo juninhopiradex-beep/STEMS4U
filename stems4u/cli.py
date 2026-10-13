@@ -4,6 +4,7 @@
   stems4u separate musica.wav --stems vocals --preview 30
   stems4u models list | install htdemucs | import drumsep_inagoy 49469ca8.th | verify htdemucs
   stems4u info          (hardware, stems disponíveis)
+  stems4u licenca entrar | estado | sair   (senha master ou beta)
   stems4u app           (abre a aplicação)
   stems4u serve         (só o motor/API, para desenvolvimento da interface)
 """
@@ -63,6 +64,9 @@ def selftest() -> int:
     with torch.no_grad():
         y = net(torch.zeros(1, 2, chunk))
     assert tuple(y.shape[-2:]) == (2, chunk), y.shape
+    # Acesso por senha: chaves presentes, PBKDF2 e identificador do computador a funcionar na app empacotada.
+    from . import license as lic
+    assert lic.KEYS and len(lic.pbkdf2_hex("x", "00" * 16)) == 64 and lic._device_id()
     print("SELFTEST OK — Demucs, PyTorch, chunking, export e métricas a funcionar")
     return 0
 
@@ -89,6 +93,9 @@ def main(argv=None):
     m.add_argument("file", nargs="?")
 
     sub.add_parser("info", help="hardware e stems disponíveis")
+    lc = sub.add_parser("licenca", help="senha de acesso (master ou beta)")
+    lc.add_argument("action", choices=["entrar", "estado", "sair"])
+    lc.add_argument("--nao-lembrar", action="store_true", help="não guardar a sessão neste computador")
     sub.add_parser("selftest", help="verifica o motor completo (usado no CI sobre a app empacotada)")
     sub.add_parser("app", help="abrir a aplicação")
     sv = sub.add_parser("serve", help="só o motor (API local)")
@@ -110,6 +117,23 @@ def main(argv=None):
                 time.sleep(3600)
         if a.cmd == "selftest":
             return selftest()
+        if a.cmd == "licenca":
+            from .license import License
+            lic = License()
+            if a.action == "estado":
+                print(lic.status()["label"])
+                return 0 if lic.unlocked else 1
+            if a.action == "sair":
+                lic.lock()
+                print("Sessão terminada neste computador.")
+                return 0
+            import getpass
+            res = lic.try_password(getpass.getpass("Senha STEMS4U: "), remember=not a.nao_lembrar)
+            if res != "ok":
+                print("Esta senha beta já expirou." if res == "expired" else "Senha errada.", file=sys.stderr)
+                return 1
+            print("Desbloqueado: " + lic.status()["label"])
+            return 0
         if a.cmd == "info":
             hw = hardware.detect()
             print(json.dumps(hw, indent=2, ensure_ascii=False))
@@ -142,6 +166,11 @@ def main(argv=None):
                 return 1 if probs else 0
             return 0
         if a.cmd == "separate":
+            from .license import License, locked_error
+            if not a.dry_run and not License().unlocked:
+                err = locked_error()
+                err.hint = "Corre primeiro: stems4u licenca entrar"
+                raise err
             ids = [x.strip() for x in a.stems.split(",") if x.strip()]
             if a.dry_run:
                 for st in plan(ids, a.quality, reg):

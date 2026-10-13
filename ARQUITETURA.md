@@ -16,6 +16,7 @@ Este documento responde aos pontos 1 a 11 das instruções de desenvolvimento an
 | Reprodução | Web Audio: um só `AudioContext` (um relógio), fontes arrancadas no mesmo instante, ganhos com rampas | Sincronização à amostra, mute/solo/volume/pan sem parar a reprodução. |
 | Versão web | HTDemucs em ONNX (MIT) no browser com WebGPU/WASM | Separa 4 stems sem servidor e sem upload. As funções avançadas ficam na app desktop. |
 | Modelos | Descarregados pelo Gestor de Modelos, nunca no instalador | Instalador pequeno, licenças controladas por modelo, actualizações independentes. |
+| Acesso | Senha master + senhas beta com validade; só salt + hash PBKDF2-HMAC-SHA256 (60 000 it.) no código; o motor bloqueia `/api/jobs` e a instalação de modelos sem sessão | Mesmo protocolo dos plugins Piradex (ANALYSER, MIXSPACE, DELEX); funciona offline. |
 | Licenças | Manifesto com licença do código ≠ licença dos pesos, SHA-256, verificador fail-closed | Uma build pública não pode incluir pesos com licença ambígua. |
 
 ---

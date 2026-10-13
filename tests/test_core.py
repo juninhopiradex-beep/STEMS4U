@@ -188,7 +188,11 @@ def test_api_token_and_job(song, tmp_path):
     from stems4u.server import Engine, serve
     p, mix, src = song
     install_fake_models(["htdemucs"])
-    eng = Engine(separator_factory=lambda s, d: Oracle(s, src, SR))
+    from tests.test_license import make_keys
+    from stems4u.license import License
+    keys, pw = make_keys()
+    eng = Engine(separator_factory=lambda s, d: Oracle(s, src, SR),
+                 license=License(store_path=tmp_path / "lic.json", keys=keys))
     httpd, url = serve(eng)
     base = url.split("/?")[0]
     try:
@@ -201,6 +205,21 @@ def test_api_token_and_job(song, tmp_path):
         info = json.load(call("/api/info"))
         avail = {c["id"] for c in info["categories"] if c["available"]}
         assert {"vocals", "drums", "bass"} <= avail and "kick" not in avail
+        # bloqueado sem senha: não separa nem instala modelos
+        assert info["license"]["unlocked"] is False
+        for path, body in (("/api/jobs", {"input": str(p), "stems": ["vocals"], "outdir": str(tmp_path / "o")}),
+                           ("/api/models/install", {"ids": ["htdemucs"]})):
+            with pytest.raises(urllib.error.HTTPError) as ei:
+                call(path, body)
+            assert ei.value.code == 403 and json.load(ei.value)["code"] == "locked"
+        with pytest.raises(urllib.error.HTTPError) as ei:
+            call("/api/license/unlock", {"password": "S4U-ERRA-DAXX-XXXX"})
+        assert json.load(ei.value)["result"] == "wrong"
+        with pytest.raises(urllib.error.HTTPError) as ei:
+            call("/api/license/unlock", {"password": pw["expired"]})
+        assert json.load(ei.value)["result"] == "expired"
+        st = json.load(call("/api/license/unlock", {"password": pw["beta"].lower(), "remember": False}))
+        assert st["result"] == "ok" and st["status"]["kind"] == "trial"
         job = json.load(call("/api/jobs", {"input": str(p), "stems": ["vocals", "bass"], "outdir": str(tmp_path / "o")}))
         stream = call(f"/api/jobs/{job['id']}/events").read().decode()
         assert "event: end" in stream and '"completed"' in stream

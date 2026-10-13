@@ -28,6 +28,18 @@ python -m stems4u models import drumsep_inagoy /caminho/para/49469ca8.th
 ```
 O ficheiro vem do repositório https://github.com/inagoy/drumsep.
 
+## Acesso por senha
+
+Ao abrir a app (ou a versão web) aparece o ecrã de senha. É o mesmo protocolo do ANALYSER, do MIXSPACE e do DELEX:
+
+- uma senha **master** (licença completa, sem prazo) e senhas **beta** `S4U-XXXX-XXXX-XXXX` com data de validade — deixam de valer no fim desse dia, mesmo a meio da sessão;
+- o código só guarda o *salt* e o hash PBKDF2-HMAC-SHA256 (60 000 iterações) de cada senha (`stems4u/license.py` e, para a versão web, `ui/index.html`). As senhas nunca entram no repositório;
+- "Lembrar neste computador" grava um token ligado a este computador, não a senha;
+- sem senha não se separa nem se instalam modelos (o motor recusa, não só a interface). Na linha de comandos: `stems4u licenca entrar`;
+- terminar sessão: clicar no selo da licença na barra de cima.
+
+Nova senha beta: `python3 tools/nova_senha_beta.py 2026-11-01` (actualiza a app e a versão web) e fazer push.
+
 ## Linha de comandos
 
 ```bash

@@ -17,6 +17,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 from . import __version__, audio_io, config, hardware, stems
+from .license import License, locked_error
 from .config import UserError, get_logger
 from .jobs import JobManager
 from .models.registry import Registry, build_profile
@@ -34,8 +35,9 @@ def ui_path() -> Path:
 
 
 class Engine:
-    def __init__(self, separator_factory=None):
+    def __init__(self, separator_factory=None, license: License | None = None):
         self.token = secrets.token_urlsafe(24)
+        self.license = license if license is not None else License()
         self.registry = Registry()
         self.jobs = JobManager(self.registry, separator_factory)
         self.allowed_roots: set[Path] = set()
@@ -96,7 +98,11 @@ class Engine:
         return {"app": "STEMS4U by Piradex", "version": __version__, "build": build_profile(),
                 "hardware": self.hw(), "categories": cats, "roadmap": stems.ROADMAP,
                 "models": self.registry.list(), "formats": list(audio_io.EXPORT_FORMATS),
-                "native_dialogs": self.picker is not None}
+                "native_dialogs": self.picker is not None, "license": self.license.status()}
+
+    def require_license(self):
+        if not self.license.unlocked:
+            raise locked_error()
 
 
 def make_handler(engine: Engine):
@@ -151,6 +157,8 @@ def make_handler(engine: Engine):
                     return self._json(engine.install_state)
                 if u.path == "/api/info":
                     return self._json(engine.info())
+                if u.path == "/api/license":
+                    return self._json(engine.license.status())
                 if u.path == "/api/jobs":
                     return self._json(engine.jobs.list())
                 if u.path.startswith("/api/jobs/") and u.path.endswith("/events"):
@@ -276,7 +284,16 @@ def make_handler(engine: Engine):
                     info = audio_io.probe(b["path"])
                     engine.allowed_roots.add(Path(b["path"]).resolve().parent)
                     return self._json(info.to_dict())
+                if u.path == "/api/license/unlock":
+                    res = engine.license.try_password(str(b.get("password", "")), bool(b.get("remember", True)))
+                    msg = {"wrong": "Senha errada.", "expired": "Esta senha beta já expirou."}.get(res, "")
+                    return self._json({"result": res, "message": msg, "status": engine.license.status()},
+                                      200 if res == "ok" else 403)
+                if u.path == "/api/license/lock":
+                    engine.license.lock()
+                    return self._json(engine.license.status())
                 if u.path == "/api/jobs":
+                    engine.require_license()
                     if not b.get("outdir"):
                         raise UserError("Escolhe uma pasta de trabalho antes de separar.", "", "no_outdir")
                     req = JobRequest(input=b["input"], stems=b["stems"], outdir=b["outdir"],
@@ -289,6 +306,7 @@ def make_handler(engine: Engine):
                     engine.jobs.cancel(u.path.split("/")[3])
                     return self._json({"ok": True})
                 if u.path == "/api/models/install":
+                    engine.require_license()
                     return self._json(engine.start_install(b.get("ids") or [b["id"]]))
                 if u.path == "/api/models/remove":
                     engine.registry.remove(b["id"])
@@ -303,7 +321,7 @@ def make_handler(engine: Engine):
                     return self._json({"ok": True})
                 self._json({"message": "Rota desconhecida"}, 404)
             except UserError as exc:
-                self._json(exc.to_dict(), 400)
+                self._json(exc.to_dict(), 403 if exc.code == "locked" else 400)
             except KeyError as exc:
                 self._json({"code": "bad_request", "message": f"Campo em falta: {exc}"}, 400)
             except Exception as exc:  # noqa: BLE001
