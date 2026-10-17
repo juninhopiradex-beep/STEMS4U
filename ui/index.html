@@ -222,6 +222,13 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;bac
 .login-foot{font-size:12px;color:var(--fg-3)!important;border-top:1px solid var(--line);padding-top:12px}
 .login-foot a{color:var(--fg-2)}
 .chip.lic-trial{color:var(--warn);border-color:rgba(245,197,66,.35)}
+/* selector de idioma PT | EN (partilhado com os plugins Piradex) */
+.lang-sw{display:inline-flex;height:28px;border:1px solid var(--line);border-radius:7px;overflow:hidden;background:var(--panel-2)}
+.lang-sw button{border:0;background:none;padding:0 9px;font:600 11px/1 var(--f-mono);letter-spacing:.08em;color:var(--fg-3)}
+.lang-sw button + button{border-left:1px solid var(--line)}
+.lang-sw button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.lang-sw button:not([aria-pressed="true"]):hover{color:var(--fg)}
+.login-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 
@@ -239,6 +246,7 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;bac
   <button class="chip" id="hwChip" type="button" title="Hardware detectado">—</button>
   <button class="chip" id="licChip" type="button" title="Licença" hidden>—</button>
   <button class="chip" id="modelsBtn" type="button">Modelos</button>
+  <div class="lang-sw" role="group" aria-label="Idioma"><button type="button" data-lang="pt" aria-pressed="true">PT</button><button type="button" data-lang="en" aria-pressed="false">EN</button></div>
 </header>
 
 <main class="app">
@@ -265,7 +273,7 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;bac
         <div class="sec-h"><span class="eyebrow"><b>2</b>O que extrair</span>
           <div class="row"><button class="ghost" id="allBtn" type="button">Todas</button><button class="ghost" id="noneBtn" type="button">Nenhuma</button></div></div>
         <div id="stemPicker" class="fam"></div>
-        <div class="note"><span aria-hidden="true">↳</span><span><b>Other</b> recebe tudo o que não seleccionares, para que a soma das pistas reconstrua a mistura. Quando pedes peças de bateria ou voz detalhada, a pista-mãe também é exportada mas começa em <b>M</b>, para não duplicar.</span></div>
+        <div class="note" data-html="note"><span aria-hidden="true">↳</span><span><b>Other</b> recebe tudo o que não seleccionares, para que a soma das pistas reconstrua a mistura. Quando pedes peças de bateria ou voz detalhada, a pista-mãe também é exportada mas começa em <b>M</b>, para não duplicar.</span></div>
         <details class="roadmap" id="roadmap"><summary><div class="sumrow"><span>Ainda sem modelo fiável</span><span id="roadmapCount" class="mono"></span></div></summary><ul id="roadmapList"></ul></details>
       </div>
 
@@ -346,7 +354,8 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;bac
 </main>
 
 <div class="login" id="login" hidden><div class="login-card" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
-  <div class="logo" aria-label="STEMS4U"><span class="bars" aria-hidden="true"><i style="height:7px;background:var(--vocals)"></i><i style="height:15px;background:var(--drums)"></i><i style="height:10px;background:var(--bass)"></i><i style="height:13px;background:var(--music)"></i></span><span>STEMS4U</span></div>
+  <div class="login-top"><div class="logo" aria-label="STEMS4U"><span class="bars" aria-hidden="true"><i style="height:7px;background:var(--vocals)"></i><i style="height:15px;background:var(--drums)"></i><i style="height:10px;background:var(--bass)"></i><i style="height:13px;background:var(--music)"></i></span><span>STEMS4U</span></div>
+    <div class="lang-sw" role="group" aria-label="Idioma"><button type="button" data-lang="pt" aria-pressed="true">PT</button><button type="button" data-lang="en" aria-pressed="false">EN</button></div></div>
   <h2 id="loginTitle">Introduz a tua senha</h2>
   <p>Senha master ou senha beta do STEMS4U by Piradex.</p>
   <form id="loginForm" autocomplete="off">
@@ -355,7 +364,7 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;bac
     <p class="login-err" id="loginErr" role="alert"></p>
     <button class="go" type="submit" id="loginBtn">Entrar</button>
   </form>
-  <p class="login-foot">As senhas beta valem até ao fim do dia da validade. Não tens senha? <a href="https://www.beatfreakstudio.com/loja" target="_blank" rel="noopener">beatfreakstudio.com/loja</a></p>
+  <p class="login-foot" data-html="loginFoot">As senhas beta valem até ao fim do dia da validade. Não tens senha? <a href="https://www.beatfreakstudio.com/loja" target="_blank" rel="noopener">beatfreakstudio.com/loja</a></p>
 </div></div>
 <div class="modal" id="modal" hidden><div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
   <div class="modal-h"><h2 id="modalTitle"></h2><button class="ghost" id="modalClose" type="button">Fechar</button></div>
@@ -409,14 +418,252 @@ const S = {
 const store = {get(k,d){try{const v=localStorage.getItem("s4u."+k);return v==null?d:JSON.parse(v)}catch(e){return d}},
                set(k,v){try{localStorage.setItem("s4u."+k,JSON.stringify(v))}catch(e){}}};
 
+/* ------------------------------------------------------------------ idioma (PT / EN)
+   Os textos nascem em PT (interface e motor). T() devolve a versão inglesa quando LANG = "en":
+   primeiro o dicionário EN (texto exacto), depois EN_RULES (textos com números/nomes).
+   Na app o idioma vem do ficheiro partilhado Piradex.settings (o mesmo dos plugins Piradex,
+   via /api/lang); na versão web fica guardado neste browser. */
+const EN = {
+  // barra superior / geral
+  "A ligar…":"Connecting…", "Hardware detectado":"Detected hardware", "Licença":"License", "Modelos":"Models",
+  "Idioma":"Language", "Mistura":"Mix", "Larga aqui a tua mistura":"Drop your mix here",
+  "Master estéreo ou mistura final. O original nunca é alterado.":"Stereo master or final mix. The original is never modified.",
+  "Escolher ficheiro":"Choose file", "Abrir projecto .s4u":"Open .s4u project", "Trocar ficheiro":"Change file", "Trocar":"Change",
+  "O que extrair":"What to extract", "Todas":"All", "Nenhuma":"None", "Ainda sem modelo fiável":"No reliable model yet",
+  "Qualidade e formato":"Quality and format", "Qualidade":"Quality", "Rápido":"Fast", "Equilibrado":"Balanced", "Alta":"High", "Ultra":"Ultra",
+  "Formato de exportação":"Export format", "Duração a processar":"Length to process", "Música completa":"Full song",
+  "Pasta de trabalho":"Working folder", "Nenhuma pasta escolhida":"No folder chosen",
+  "Os stems são gravados apenas onde escolheres.":"Stems are saved only where you choose.", "Escolher":"Choose",
+  "Separar e exportar":"Separate and export", "Carrega uma mistura para começar.":"Load a mix to start.",
+  "Resultado":"Result", "Pronto para separar":"Ready to separate", "Abrir stems…":"Open stems…", "Abrir pasta":"Open folder",
+  "Guardar stems":"Save stems", "Importação":"Import", "Separação":"Separation", "Reconstrução":"Reconstruction", "Exportação":"Export",
+  "Em fila":"Queued", "Concluído":"Done", "Falhou":"Failed", "Cancelado":"Cancelled", "Modelo":"Model", "Cancelar":"Cancel",
+  "Reproduzir":"Play", "Pausa":"Pause", "Reproduzir / pausa (Espaço)":"Play / pause (Space)", "Parar e voltar ao início":"Stop and return to start",
+  "Parar":"Stop", "Repetir":"Repeat", "Menos zoom":"Zoom out", "Mais zoom":"Zoom in",
+  "Exporta a mistura com o volume, pan, mute e solo actuais":"Exports the mix with the current volume, pan, mute and solo",
+  "Exportar mistura":"Export mix", "Relatório":"Report", "Fechar":"Close",
+  // senha
+  "Introduz a tua senha":"Enter your password", "Senha master ou senha beta do STEMS4U by Piradex.":"STEMS4U by Piradex master or beta password.",
+  "Senha":"Password", "Lembrar neste computador":"Remember on this computer", "Entrar":"Sign in", "A verificar…":"Checking…",
+  "Sem sessão":"Not signed in", "Licença completa":"Full license", "Senha errada.":"Wrong password.",
+  "Esta senha beta já expirou.":"This beta password has expired.", "Desbloqueado":"Unlocked",
+  "Este browser não consegue verificar a senha. Abre a página em https.":"This browser can't verify the password. Open the page over https.",
+  "Estado":"Status", "Terminar sessão neste computador":"Sign out on this computer",
+  "Terminar a sessão apaga o acesso guardado neste computador. Vais precisar da senha para voltar a entrar.":"Signing out removes the access saved on this computer. You will need the password to sign in again.",
+  "Introduz a senha para continuar.":"Enter the password to continue.",
+  "O STEMS4U está bloqueado.":"STEMS4U is locked.",
+  "Introduz a tua senha (master ou beta) para separar e instalar modelos.":"Enter your password (master or beta) to separate and install models.",
+  // modo / hardware
+  "Motor local":"Local engine", "build pública":"public build", "build de desenvolvimento":"development build",
+  "Modo web · 4 stems no browser":"Web mode · 4 stems in the browser", "WebGPU disponível":"WebGPU available", "WASM (sem WebGPU)":"WASM (no WebGPU)",
+  "Sobre o modo web":"About web mode", "Sistema":"System", "Arquitectura":"Architecture", "Acelerador":"Accelerator", "Nenhum (CPU)":"None (CPU)",
+  "não instalado":"not installed", "Recomendado":"Recommended", "Recomendado para este computador":"Recommended for this computer",
+  "● recomendado: ":"● recommended: ", "HTDemucs no browser":"HTDemucs in the browser",
+  "WebGPU está disponível neste browser: a separação usa a placa gráfica.":"WebGPU is available in this browser: separation uses the graphics card.",
+  "Este browser não expõe WebGPU: a separação usa WebAssembly no CPU (mais lenta).":"This browser doesn't expose WebGPU: separation uses WebAssembly on the CPU (slower).",
+  "GPU NVIDIA com VRAM suficiente.":"NVIDIA GPU with enough VRAM.", "Aceleração por GPU disponível.":"GPU acceleration available.",
+  "Só CPU: modo Equilibrado. Alta Qualidade funciona, mas ~4x mais lento.":"CPU only: Balanced mode. High quality works, but ~4x slower.",
+  "Só CPU com poucos recursos: modo Rápido recomendado.":"CPU only with limited resources: Fast mode recommended.",
+  // modelos
+  "Instala os modelos para começar":"Install the models to start",
+  "HTDemucs (Voz, Bateria, Baixo) e HTDemucs 6 stems (Guitarra, Piano), licença MIT, ≈135 MB. Ficam guardados neste computador e só se descarregam uma vez.":"HTDemucs (Vocals, Drums, Bass) and HTDemucs 6 stems (Guitar, Piano), MIT license, ≈135 MB. They are stored on this computer and download only once.",
+  "Instalar modelos (≈135 MB)":"Install models (≈135 MB)", "A descarregar…":"Downloading…", "A ligar ao servidor dos modelos…":"Connecting to the model server…",
+  "Modelos instalados — escolhe o que extrair":"Models installed — choose what to extract", "Tentar de novo":"Try again",
+  "Instalar":"Install", "A descarregar":"Downloading", "instalado":"installed", "licença dos pesos a confirmar (uso pessoal)":"weights license to be confirmed (personal use)",
+  "Indisponível":"Unavailable", "Gestor de modelos":"Model manager", "Modelo instalado":"Model installed", "licença verificada":"verified license",
+  "licença dos pesos a confirmar":"weights license to be confirmed", "Remover":"Remove", "Instalação manual":"Manual install",
+  "Só build de desenvolvimento":"Development build only", "entrada":"input", "mistura":"mix", "pesos":"weights", "tempo real":"real time",
+  "Não documentada formalmente pelos autores":"Not formally documented by the authors", "MIT (a confirmar no repositório original)":"MIT (to be confirmed in the original repository)",
+  "Não declarada":"Not declared",
+  "DrumSep 6 peças (MDX23C)":"DrumSep 6-piece (MDX23C)", "DrumSep (4 peças)":"DrumSep (4-piece)",
+  "MelBand Roformer Karaoke (voz principal / coros)":"MelBand Roformer Karaoke (lead / backing vocals)",
+  "Hybrid Transformer Demucs (bag de 4 modelos especializados)":"Hybrid Transformer Demucs (bag of 4 specialised models)",
+  "Rápido e robusto; base de 4 stems.":"Fast and robust; 4-stem base.",
+  "~4x mais lento que htdemucs; melhor separação de bateria e baixo.":"~4x slower than htdemucs; better drum and bass separation.",
+  "Guitarra razoável; piano fraco e com bleeding (os autores avisam). Mostrado com aviso.":"Decent guitar; weak piano with bleeding (the authors warn about it). Shown with a warning.",
+  "Separa bombo, tarola, timbalões, hi-hat e pratos (ride + crash) a partir da pista de bateria. Melhor que o DrumSep de 4 peças.":"Separates kick, snare, toms, hi-hat and cymbals (ride + crash) from the drum track. Better than the 4-piece DrumSep.",
+  "Bombo e tarola bons; toms e pratos com bleeding. Hi-hat fica em Pratos.":"Good kick and snare; toms and cymbals with bleeding. Hi-hat goes into Cymbals.",
+  "Referência da comunidade para lead/backing. Lento em CPU.":"Community reference for lead/backing. Slow on CPU.",
+  "Treinado em voz; não serve para reverb global.":"Trained on vocals; not suitable for global reverb.",
+  "Separa ruído de fundo da mistura.":"Separates background noise from the mix.",
+  "Descarrega o ficheiro 49469ca8.th do repositório https://github.com/inagoy/drumsep e importa com: stems4u models import drumsep_inagoy <ficheiro>":"Download the file 49469ca8.th from https://github.com/inagoy/drumsep and import it with: stems4u models import drumsep_inagoy <file>",
+  "Sem modelo.":"No model.", "Instala o modelo para activar.":"Install the model to enable it.", "Modelo não instalado.":"Model not installed.",
+  "Licença dos pesos não confirmada — excluído da build pública.":"Weights license not confirmed — excluded from the public build.",
+  "Disponível na app desktop.":"Available in the desktop app.",
+  // stems (motor e modo web)
+  "Voz":"Vocals", "Voz principal":"Lead vocal", "Coros e segundas vozes":"Backing vocals", "Voz principal (seca)":"Lead vocal (dry)",
+  "Reverb vocal":"Vocal reverb", "Bateria":"Drums", "Bombo":"Kick", "Tarola":"Snare", "Timbalões":"Toms", "Hi-hat":"Hi-hat", "Pratos":"Cymbals",
+  "Baixo":"Bass", "Guitarra":"Guitar", "Piano e teclados":"Piano and keys", "Ruído":"Noise", "Other":"Other",
+  "Toda a voz (base para voz detalhada)":"All vocals (base for detailed vocals)", "Toda a voz":"All vocals", "Voz à frente":"Front vocal",
+  "Harmonias e dobras":"Harmonies and doubles", "Harmonias":"Harmonies", "Voz principal sem reverb":"Lead vocal without reverb",
+  "Cauda e ambiência da voz principal":"Lead vocal tail and ambience", "Bateria completa":"Full drum kit", "Kick":"Kick",
+  "Snare e clap":"Snare and clap", "Toms":"Toms", "Chimbal aberto e fechado":"Open and closed hi-hat",
+  "Crash, ride (e hi-hat se não separado)":"Crash, ride (and hi-hat if not separated)", "Crash, ride, hi-hat":"Crash, ride, hi-hat",
+  "Baixo eléctrico, synth bass e 808":"Electric bass, synth bass and 808", "Baixo e 808":"Bass and 808", "Acústica e eléctrica":"Acoustic and electric",
+  "Piano, Rhodes, órgão":"Piano, Rhodes, organ", "Piano, Rhodes":"Piano, Rhodes", "Ruído de fundo e artefactos":"Background noise and artefacts",
+  "Tudo o que não foi seleccionado":"Everything not selected",
+  "Clap":"Clap", "Percussão (congas, djembé, shakers…)":"Percussion (congas, djembe, shakers…)", "Sub-bass / 808":"Sub-bass / 808",
+  "Synth / Pads":"Synth / Pads", "Cordas":"Strings", "Metais":"Brass", "Ad-libs":"Ad-libs", "Ambiência / Reverb global":"Ambience / global reverb",
+  "Sem modelo público que separe clap de snare com fiabilidade; vai em Tarola.":"No public model reliably separates clap from snare; it goes into Snare.",
+  "Nenhum modelo aberto treinado em percussão africana. Plano: dataset próprio (Kuduro, Afro House) — ver ARQUITETURA.md §9.":"No open model trained on African percussion. Plan: our own dataset (Kuduro, Afro House) — see ARQUITETURA.md §9.",
+  "Divisão por banda é possível mas não é separação de fonte; planeado como ferramenta de split por frequência (Fase 3).":"Band splitting is possible but is not source separation; planned as a frequency-split tool (Phase 3).",
+  "Modelos 'synth' existentes têm SDR baixo e licenças por confirmar.":"Existing 'synth' models have low SDR and unconfirmed licenses.",
+  "Modelos comunitários existem (MVSep) mas licença dos pesos por confirmar.":"Community models exist (MVSep) but the weights license is unconfirmed.",
+  "Idem — sem pesos com licença inequívoca.":"Same — no weights with an unambiguous license.",
+  "Não existe modelo; ad-libs ficam com a voz principal ou coros.":"No model exists; ad-libs stay with the lead or backing vocals.",
+  "Modelos de de-reverb existem só para voz; global é experimental.":"De-reverb models exist only for vocals; global is experimental.",
+  "Percussão africana (congas, djembé, shakers…)":"African percussion (congas, djembe, shakers…)",
+  "Sem modelo aberto treinado nestes instrumentos; plano de dataset próprio.":"No open model trained on these instruments; our own dataset is planned.",
+  "Synth / Pads, Cordas, Metais":"Synth / Pads, Strings, Brass", "Modelos existentes com licença dos pesos por confirmar.":"Existing models with unconfirmed weights licenses.",
+  "Planeado como divisão por banda, não como separação de fonte.":"Planned as band splitting, not as source separation.",
+  "Clap, Ad-libs, Ambiência global":"Clap, Ad-libs, global ambience", "Sem modelo fiável.":"No reliable model.",
+  "Sem conteúdo audível na mistura — mantido dentro de Other.":"No audible content in the mix — kept inside Other.",
+  // estimativa, ficheiro, separação
+  "Estimativa: ":"Estimate: ", " pista(s) + Other":" track(s) + Other",
+  "Escolhe a pasta de trabalho antes de separar.":"Choose the working folder before separating.", "Escolhe pelo menos um instrumento.":"Choose at least one instrument.",
+  "A importar…":"Importing…", "Não foi possível abrir o ficheiro.":"Couldn't open the file.",
+  "O ficheiro pode estar corrompido ou usar um codec não suportado.":"The file may be corrupted or use an unsupported codec.",
+  "mono":"mono", "estéreo":"stereo", "Modo web trabalha a 44,1 kHz.":"Web mode works at 44.1 kHz.",
+  "A app desktop preserva a taxa original (48, 88,2, 96 e 192 kHz).":"The desktop app keeps the original rate (48, 88.2, 96 and 192 kHz).",
+  "A separação falhou":"Separation failed", "Separação cancelada":"Separation cancelled", "A separar…":"Separating…", "A preparar":"Preparing",
+  "A ler o ficheiro":"Reading the file", "A converter para 44,1 kHz":"Converting to 44.1 kHz", "A reconstruir à taxa original":"Rebuilding at the original rate",
+  "A exportar":"Exporting", "Exportação pronta":"Export ready", "Cancelado pelo utilizador":"Cancelled by the user",
+  "Erro interno durante o processamento.":"Internal error during processing.",
+  "A carregar pistas no mixer…":"Loading tracks into the mixer…", "Stems exportados":"Stems exported",
+  "Os stems foram gravados na pasta, mas o mixer não os conseguiu abrir.":"The stems were saved to the folder, but the mixer couldn't open them.",
+  "A exportação está pronta":"The export is ready", "A descodificar a mistura":"Decoding the mix",
+  "A carregar o modelo HTDemucs (≈172 MB, fica em cache)":"Loading the HTDemucs model (≈172 MB, cached)",
+  "A separar no GPU (WebGPU)":"Separating on the GPU (WebGPU)", "A separar no CPU (WASM) — mais lento":"Separating on the CPU (WASM) — slower",
+  "WebGPU indisponível neste browser — a mudar para CPU":"WebGPU unavailable in this browser — switching to CPU",
+  "A calcular Other":"Computing Other", "A gravar":"Saving", "Stems gravados na pasta":"Stems saved to the folder", "Separação concluída":"Separation complete",
+  "Não foi possível separar no browser.":"Couldn't separate in the browser.",
+  "Experimenta no Chrome/Edge recente ou usa a app desktop.":"Try a recent Chrome/Edge or use the desktop app.",
+  // mixer
+  "Nenhuma pista ainda":"No tracks yet", "sessão de exemplo":"example session", "Análise técnica":"Technical analysis",
+  "Separa uma mistura ou usa “Abrir stems…” para carregar ficheiros já separados no mixer.":"Separate a mix or use “Open stems…” to load already separated files into the mixer.",
+  "Pan (duplo clique = centro)":"Pan (double-click = centre)", "Pico":"Peak", "Dinâmica":"Dynamics", "Largura estéreo":"Stereo width",
+  "Correlação":"Correlation", "Centróide espectral":"Spectral centroid", "Presença na mistura":"Presence in the mix",
+  "A exportar…":"Exporting…", "Mistura exportada":"Mix exported", "Mistura exportada sem clipping.":"Mix exported without clipping.",
+  "Não foi possível exportar a mistura.":"Couldn't export the mix.", "Os ficheiros têm durações diferentes.":"The files have different lengths.",
+  "Foram alinhados pelo início; stems do STEMS4U têm sempre a mesma duração.":"They were aligned at the start; STEMS4U stems always have the same length.",
+  "Não foi possível abrir os stems.":"Couldn't open the stems.",
+  "Reconstrução final":"Final reconstruction", "Soma do modelo vs mistura":"Model sum vs mix", "Amostras por pista":"Samples per track",
+  "Taxa de amostragem":"Sample rate", "Aviso de exportação":"Export warning", "Sessão de exemplo":"Example session",
+  "Sessão de exemplo — sinais sintéticos gerados no browser.":"Example session — synthetic signals generated in the browser.",
+  "Serve para experimentar o mixer (mute, solo, volume, pan, seek, exportar mistura). Carrega uma música para fazer uma separação real.":"Use it to try the mixer (mute, solo, volume, pan, seek, export mix). Load a song to run a real separation.",
+  "Diálogos nativos indisponíveis neste modo; usa a CLI com --out.":"Native dialogs unavailable in this mode; use the CLI with --out.",
+  "Os stems são gravados directamente nesta pasta.":"Stems are saved directly into this folder.", "Transferências":"Downloads",
+  "Este browser não permite escolher pasta: usa “Guardar stems” no fim.":"This browser can't pick a folder: use “Save stems” at the end.",
+  "A cancelar com segurança…":"Cancelling safely…", "No modo web a separação termina o bloco actual antes de parar.":"In web mode the separation finishes the current block before stopping.",
+  "Stems guardados":"Stems saved", "Não foi possível guardar.":"Couldn't save.",
+  // erros do motor
+  "Resposta inválida do motor":"Invalid response from the engine", "Erro":"Error", "Erro interno":"Internal error", "Token inválido":"Invalid token",
+  "Rota desconhecida":"Unknown route", "Não encontrado":"Not found", "Acesso negado a este ficheiro":"Access to this file denied", "Pasta não autorizada":"Folder not authorised",
+  "Falha ao instalar o modelo.":"Failed to install the model.", "Este ficheiro não é um projecto STEMS4U.":"This file is not a STEMS4U project.",
+  "Não foi possível gravar o ficheiro.":"Couldn't write the file.", "Escolhe pelo menos um instrumento para separar.":"Choose at least one instrument to separate.",
+  "Instala o modelo no gestor de modelos.":"Install the model in the model manager.", "Dependências de modelos impossíveis de resolver.":"Model dependencies could not be resolved.",
+  "Escolhe uma pasta de trabalho antes de separar.":"Choose a working folder before separating.",
+  "O ficheiro não existe.":"The file doesn't exist.", "Usa WAV, AIFF, FLAC, MP3, M4A ou AAC.":"Use WAV, AIFF, FLAC, MP3, M4A or AAC.",
+  "O ficheiro parece corrompido ou usa um codec não suportado.":"The file seems corrupted or uses an unsupported codec.", "O ficheiro não tem áudio.":"The file has no audio.",
+  "Não foi possível descodificar M4A/AAC.":"Couldn't decode M4A/AAC.",
+  "Converte para WAV ou instala o ffmpeg (incluído no instalador Windows).":"Convert to WAV or install ffmpeg (included in the Windows installer).",
+  "Não foi possível ler o ficheiro.":"Couldn't read the file.", "Não foi possível descodificar o áudio.":"Couldn't decode the audio.",
+  "Áudio multicanal (>2) ainda não é suportado.":"Multichannel audio (>2) is not supported yet.", "Exporta uma mistura estéreo.":"Export a stereo mix.",
+  "Erro ao exportar.":"Export error.", "Disco cheio.":"Disk full.", "Liberta espaço ou escolhe outra pasta.":"Free up space or choose another folder.",
+  "Componente openunmix em falta.":"openunmix component missing.", "Reinstala o STEMS4U.":"Reinstall STEMS4U.",
+  "Motor de IA (PyTorch) não está instalado.":"AI engine (PyTorch) is not installed.",
+  "Reinstala o STEMS4U ou corre: pip install -r requirements.txt":"Reinstall STEMS4U or run: pip install -r requirements.txt",
+  "Backend Roformer não instalado.":"Roformer backend not installed.", "O modelo não devolveu os stems esperados.":"The model didn't return the expected stems.",
+  "Pacote demucs em falta.":"demucs package missing.", "Memória de vídeo (VRAM) insuficiente.":"Not enough video memory (VRAM).",
+  "Escolhe o modo Rápido ou processamento por CPU.":"Choose Fast mode or CPU processing.", "Abre o gestor de modelos.":"Open the model manager.",
+  "Este modelo instala-se com 'stems4u models import'.":"This model is installed with 'stems4u models import'.",
+  "Modelos Roformer só em build de desenvolvimento enquanto a licença não for confirmada.":"Roformer models only in the development build until the license is confirmed.",
+  "Ficheiro não encontrado.":"File not found.", "Hash do ficheiro não corresponde ao manifesto.":"File hash doesn't match the manifest.",
+  "Hash do modelo não corresponde — ficheiro rejeitado.":"Model hash doesn't match — file rejected.", "Falha ao descarregar o modelo.":"Failed to download the model.",
+};
+const EN_DATE = (y, m, d) => new Date(+y, +m - 1, +d).toLocaleDateString("en-US", {month:"short", day:"numeric", year:"numeric"});
+const EN_RULES = [
+  [/^BETA · válida até (\d\d)\/(\d\d)\/(\d{4})$/, (d, m, y) => "BETA · valid until " + EN_DATE(y, m, d)],
+  [/^(.+): resultado em cache$/, n => T(n) + ": cached result"],
+  [/^(.+): a separar$/, n => T(n) + ": separating"],
+  [/^Exportado (.+)$/, n => "Exported " + T(n)],
+  [/^A carregar pistas no mixer… (\d+)\/(\d+)$/, (a, b) => `Loading tracks into the mixer… ${a}/${b}`],
+  [/^(.+) \(exemplo\)$/, n => T(n) + " (example)"],
+  [/^Pré-escuta (\d+) s$/, n => `Preview ${n} s`],
+  [/^Formato (.+) não suportado\.$/, f => `Format ${f} not supported.`],
+  [/^Formato de exportação desconhecido: (.+)$/, f => "Unknown export format: " + f],
+  [/^Verifica o caminho: (.+)$/s, p => "Check the path: " + p],
+  [/^Modo de qualidade inválido: (.+)$/, q => "Invalid quality mode: " + q],
+  [/^Sem modelo instalado para: (.+)\.$/, l => "No model installed for: " + l.split(", ").map(T).join(", ") + "."],
+  [/^(.+) devolveu um stem com tamanho errado\.$/, n => n + " returned a stem with the wrong length."],
+  [/^Modelo não encontrado: (.+)$/, n => "Model not found: " + n],
+  [/^(.+): instalação manual\.$/, n => n + ": manual install."],
+  [/^Backend desconhecido: (.+)$/, n => "Unknown backend: " + n],
+  [/^Verifica a ligação à internet e tenta de novo\. Detalhe: (.*)$/s, d => "Check your internet connection and try again. Detail: " + d],
+  [/^Campo em falta: (.+)$/, n => "Missing field: " + n],
+  [/^Stem desconhecido: (.+)$/, n => "Unknown stem: " + n],
+  [/^Pico de (\S+) dBFS em (.+): haveria clipping em (\d+) bits\. Exporta em WAV 32-bit float para preservar o sinal\.$/,
+    (p, f, b) => `Peak of ${p} dBFS in ${f}: it would clip at ${b} bits. Export as WAV 32-bit float to preserve the signal.`],
+  [/^Pico de (\S+) dBFS: gravado em 32-bit float para não cortar\. Baixa o volume se precisares de inteiro\.$/,
+    p => `Peak of ${p} dBFS: saved as 32-bit float so it doesn't clip. Lower the volume if you need integer.`],
+  [/^Não foi possível descarregar o modelo \((\d+)\)\.$/, c => `Couldn't download the model (${c}).`],
+  [/^Não foi possível ler (.+) \((\d+)\)$/, (f, c) => `Couldn't read ${f} (${c})`],
+  [/^A descarregar o modelo (\d+)%$/, p => `Downloading the model ${p}%`],
+  [/^Carrega em “Abrir pasta” para os usar na DAW\. Detalhe: (.*)$/s, d => "Click “Open folder” to use them in your DAW. Detail: " + d],
+  [/^(\d+) stems abertos no mixer$/, n => n + " stems open in the mixer"],
+  [/^(\d+) pistas$/, n => n + " tracks"],
+  [/^processado em (.+)$/, t => "processed in " + t],
+  [/^(.+) instalado$/, n => n + " installed"],
+];
+const EN_HTML = {
+  note: `<span aria-hidden="true">↳</span><span><b>Other</b> receives everything you don't select, so the sum of the tracks rebuilds the mix. When you ask for drum pieces or detailed vocals, the parent track is also exported but starts on <b>M</b> (muted), so nothing is doubled.</span>`,
+  loginFoot: `Beta passwords are valid until the end of their expiry day. No password? <a href="https://www.beatfreakstudio.com/loja" target="_blank" rel="noopener">beatfreakstudio.com/loja</a>`,
+};
+const HAS = Object.prototype.hasOwnProperty;
+let LANG = (() => { const l = store.get("lang", null); if(l === "pt" || l === "en") return l;
+  return /^pt/i.test((navigator.languages && navigator.languages[0]) || navigator.language || "") ? "pt" : "en"; })();
+function T(s){
+  if(LANG !== "en" || s == null) return s;
+  s = String(s); if(HAS.call(EN, s)) return EN[s];
+  const k = s.trim(); if(k && k !== s && HAS.call(EN, k)) return s.replace(k, EN[k]);
+  for(const [re, f] of EN_RULES){ const m = k.match(re); if(m) return f(...m.slice(1)); }
+  return s;
+}
+const LOCALE = () => LANG === "en" ? "en-US" : "pt-PT";
+// Texto dinâmico que tem de mudar com o idioma: guarda o original PT no próprio elemento.
+function setT(el, pt){ if(!el) return; el.dataset.pt = pt == null ? "" : pt; el.textContent = T(el.dataset.pt); }
+// Textos fixos do HTML: guardados uma vez (PT) e traduzidos sempre a partir do original.
+const I18N_STATIC = {nodes: [], attrs: [], html: []};
+function captureStatic(){
+  const skip = n => { for(let e = n.parentElement; e; e = e.parentElement){ if(e.dataset && e.dataset.html) return true; if(/^(SCRIPT|STYLE)$/.test(e.tagName)) return true; } return false; };
+  const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  for(let n; (n = w.nextNode());) if(n.nodeValue.trim() && !skip(n)) I18N_STATIC.nodes.push([n, n.nodeValue]);
+  $$("[title],[aria-label],[placeholder]").forEach(el => ["title","aria-label","placeholder"].forEach(a => { if(el.hasAttribute(a)) I18N_STATIC.attrs.push([el, a, el.getAttribute(a)]); }));
+  $$("[data-html]").forEach(el => I18N_STATIC.html.push([el, el.innerHTML]));
+}
+function applyStatic(){
+  I18N_STATIC.nodes.forEach(([n, pt]) => { if(n.isConnected && !(n.parentElement && n.parentElement.dataset.pt != null)) n.nodeValue = T(pt); });
+  I18N_STATIC.attrs.forEach(([el, a, pt]) => el.setAttribute(a, T(pt)));
+  I18N_STATIC.html.forEach(([el, pt]) => { el.innerHTML = LANG === "en" && EN_HTML[el.dataset.html] ? EN_HTML[el.dataset.html] : pt; });
+  $$("[data-pt]").forEach(el => el.textContent = T(el.dataset.pt));
+  $$(".lang-sw button").forEach(b => b.setAttribute("aria-pressed", b.dataset.lang === LANG ? "true" : "false"));
+  document.documentElement.lang = LANG;
+}
+async function setLang(l, opts = {}){
+  l = l === "en" ? "en" : "pt"; const changed = l !== LANG; LANG = l; store.set("lang", l);
+  if(!opts.local && S.mode === "engine") api("/api/lang", {json:{lang:l}}).catch(() => {});
+  applyStatic(); if(changed || opts.force) rerenderAll();
+}
+
 /* ------------------------------------------------------------------ util */
 function fmtTime(s){ s = Math.max(0,s||0); const m=Math.floor(s/60), r=s-m*60; return String(m).padStart(2,"0")+":"+r.toFixed(3).padStart(6,"0"); }
 function fmtDur(s){ const m=Math.floor(s/60), r=Math.round(s%60); return m+":"+String(r).padStart(2,"0"); }
 function db(x){ return x>0 ? 20*Math.log10(x) : -Infinity; }
 function fmtDb(x,d=1){ return Number.isFinite(x) ? (x>0?"+":"")+x.toFixed(d) : "−∞"; }
 function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
-let toastT; function toast(msg){ let t=$(".toast"); if(!t){t=document.createElement("div");t.className="toast";document.body.appendChild(t);} t.textContent=msg; t.hidden=false; clearTimeout(toastT); toastT=setTimeout(()=>t.hidden=true,3200); }
-function alertBox(title, hint, kind){ const d=document.createElement("div"); d.className="alert"+(kind==="info"?" info":""); d.innerHTML=`<b>${esc(title)}</b>${esc(hint||"")}`; $("#alerts").appendChild(d); return d; }
+let toastT; function toast(msg){ msg = T(msg); let t=$(".toast"); if(!t){t=document.createElement("div");t.className="toast";document.body.appendChild(t);} t.textContent=msg; t.hidden=false; clearTimeout(toastT); toastT=setTimeout(()=>t.hidden=true,3200); }
+function alertBox(title, hint, kind){ const d=document.createElement("div"); d.className="alert"+(kind==="info"?" info":""); d._pt=[title, hint||""]; paintAlert(d); $("#alerts").appendChild(d); return d; }
+function paintAlert(d){ d.innerHTML=`<b>${esc(T(d._pt[0]))}</b>${esc(T(d._pt[1]))}`; }
 function clearAlerts(){ $("#alerts").innerHTML=""; }
 
 async function api(path, opts={}){
@@ -454,24 +701,25 @@ async function webAutoUnlock(){
   return (await webTokenFor(k)) === st.token ? k : null;
 }
 async function refreshLicense(){
-  if(S.mode === "engine"){ try { LIC.status = await api("/api/license"); } catch(e){} }
+  if(S.mode === "engine"){ try { LIC.status = await api("/api/license"); } catch(e){}
+    try { const r = await api("/api/lang"); if(r.lang && r.lang !== LANG) setLang(r.lang, {local:true}); } catch(e){} }
   else if(LIC.key){ if(keyExpired(LIC.key)){ LIC.key = null; store.set("lic", null); } LIC.status = keyStatus(LIC.key); }
   renderLicChip();
   if(!LIC.status.unlocked) showLogin();
 }
 function renderLicChip(){
   const c = $("#licChip"); const st = LIC.status;
-  c.hidden = !st.unlocked; c.textContent = st.label; c.classList.toggle("lic-trial", st.kind === "trial");
+  c.hidden = !st.unlocked; setT(c, st.label); c.classList.toggle("lic-trial", st.kind === "trial");
 }
 function showLogin(msg){
-  $("#login").hidden = false; $("#loginErr").textContent = msg || "";
+  $("#login").hidden = false; setT($("#loginErr"), msg || "");
   setTimeout(() => $("#loginPw").focus(), 30);
 }
 async function submitLogin(ev){
   ev.preventDefault();
   const pw = $("#loginPw").value.trim().toUpperCase(), remember = $("#loginRemember").checked, btn = $("#loginBtn");
   if(!pw) return;
-  btn.disabled = true; btn.textContent = "A verificar…"; $("#loginErr").textContent = "";
+  btn.disabled = true; setT(btn, "A verificar…"); setT($("#loginErr"), "");
   try {
     if(S.mode === "engine"){
       try { const r = await api("/api/license/unlock", {json:{password: pw, remember}}); LIC.status = r.status; }
@@ -485,15 +733,15 @@ async function submitLogin(ev){
       store.set("lic", remember ? {key: found.id, token: await webTokenFor(found)} : null);
     }
     $("#login").hidden = true; $("#loginPw").value = ""; renderLicChip();
-    toast("Desbloqueado · " + LIC.status.label);
-  } catch(e){ $("#loginErr").textContent = e.message; $("#loginPw").select(); }
-  finally { btn.disabled = false; btn.textContent = "Entrar"; }
+    toast(T("Desbloqueado") + " · " + T(LIC.status.label));
+  } catch(e){ setT($("#loginErr"), e.message); $("#loginPw").select(); }
+  finally { btn.disabled = false; setT(btn, "Entrar"); }
 }
 function licModal(){
   openModal("Licença", `<div style="padding:16px;display:flex;flex-direction:column;gap:14px">
-    <div><div class="muted">Estado</div><div style="font:600 16px var(--f-display);margin-top:4px">${esc(LIC.status.label)}</div></div>
-    <p class="muted" style="margin:0">Terminar a sessão apaga o acesso guardado neste computador. Vais precisar da senha para voltar a entrar.</p>
-    <button class="ghost" type="button" id="licLogout" style="align-self:flex-start">Terminar sessão neste computador</button></div>`);
+    <div><div class="muted">${T("Estado")}</div><div style="font:600 16px var(--f-display);margin-top:4px">${esc(T(LIC.status.label))}</div></div>
+    <p class="muted" style="margin:0">${T("Terminar a sessão apaga o acesso guardado neste computador. Vais precisar da senha para voltar a entrar.")}</p>
+    <button class="ghost" type="button" id="licLogout" style="align-self:flex-start">${T("Terminar sessão neste computador")}</button></div>`, licModal);
   $("#licLogout").onclick = async () => {
     if(S.mode === "engine"){ try { LIC.status = await api("/api/license/lock", {json:{}}); } catch(e){} }
     else { LIC.key = null; store.set("lic", null); LIC.status = keyStatus(null); }
@@ -519,18 +767,17 @@ async function boot(){
   if(S.mode === "engine"){
     S.cats = S.info.categories; S.roadmap = S.info.roadmap;
     S.rec = S.info.hardware.recommendation.quality;
-    $("#modeTxt").textContent = "Motor local · " + (S.info.build === "public" ? "build pública" : "build de desenvolvimento");
     $("#modeDot").className = "dot ok";
     const hw = S.info.hardware;
     $("#hwChip").textContent = (hw.device === "cpu" ? "CPU" : hw.device.toUpperCase()) + " · " + (hw.gpu || hw.cpu || "").replace(/\(R\)|\(TM\)|CPU|@.*$/g,"").trim().slice(0,26) + (hw.ram_gb ? " · "+hw.ram_gb+" GB" : "");
+    if(S.info.lang === "pt" || S.info.lang === "en"){ LANG = S.info.lang; store.set("lang", LANG); }
     $("#openProjBtn").hidden = false;
     S.selected = new Set([...S.selected].filter(id => (S.cats.find(c=>c.id===id)||{}).available));
   } else {
     S.rec = "balanced";
-    $("#modeTxt").textContent = "Modo web · 4 stems no browser";
     $("#modeDot").className = "dot warn";
-    $("#hwChip").textContent = ("gpu" in navigator) ? "WebGPU disponível" : "WASM (sem WebGPU)";
-    $("#modelsBtn").textContent = "Sobre o modo web";
+    setT($("#hwChip"), ("gpu" in navigator) ? "WebGPU disponível" : "WASM (sem WebGPU)");
+    setT($("#modelsBtn"), "Sobre o modo web");
     $("#fmtSel").querySelectorAll("option").forEach(o => { if(!/^wav(24|32f|16)$/.test(o.value)) o.disabled = true; });
   }
   S.quality = store.get("quality", S.rec);
@@ -538,19 +785,36 @@ async function boot(){
   $("#fmtSel").value = store.get("fmt", "wav24");
   if(S.mode === "web" && !/^wav/.test($("#fmtSel").value)) $("#fmtSel").value = "wav24";
   const od = store.get("outdir", null); if(S.mode === "engine" && od){ setFolder(od); }
+  renderModeChip(); applyStatic();
   renderPicker(); renderQuality(); bindUI(); updateGo();
   if(S.mode === "web") loadExampleSession();
   renderTracks();
   await initLicense();
 }
+function renderModeChip(){
+  $("#modeTxt").textContent = S.mode === "engine"
+    ? T("Motor local") + " · " + T(S.info.build === "public" ? "build pública" : "build de desenvolvimento")
+    : T("Modo web · 4 stems no browser");
+}
+// Volta a desenhar tudo o que é gerado por código depois de mudar de idioma.
+function rerenderAll(){
+  renderModeChip(); renderLicChip(); renderPicker(); renderQuality(); updateGo();
+  if(S.file) renderFileSpecs(S.file);
+  $$("#alerts .alert").forEach(d => d._pt && paintAlert(d));
+  if(S.lastProg && !$("#progBox").hidden) onProgress(S.lastProg);
+  if(S.lastReport && !$("#reportPanel").hidden) showReport(S.lastReport[0], S.lastReport[1], true);
+  setT($("#exportMixBtn"), $("#exportMixBtn").dataset.pt || "Exportar mistura");
+  renderTracks(); setPlayIcon();
+  if(!$("#modal").hidden && S.modalFn) S.modalFn();
+}
 function firstRun(){
   // Sem modelos instalados nada pode ser seleccionado: mostra um cartão claro no lugar das opções.
   const host = $("#stemPicker");
   const card = document.createElement("div"); card.className = "setup"; card.id = "setupCard";
-  card.innerHTML = `<strong>Instala os modelos para começar</strong>
-    <p>HTDemucs (Voz, Bateria, Baixo) e HTDemucs 6 stems (Guitarra, Piano), licença MIT, ≈135 MB. Ficam guardados neste computador e só se descarregam uma vez.</p>
+  card.innerHTML = `<strong>${T("Instala os modelos para começar")}</strong>
+    <p>${T("HTDemucs (Voz, Bateria, Baixo) e HTDemucs 6 stems (Guitarra, Piano), licença MIT, ≈135 MB. Ficam guardados neste computador e só se descarregam uma vez.")}</p>
     <div class="bar" id="setupBar" hidden><i></i></div><p class="mono" id="setupMsg" hidden></p>
-    <button class="go" type="button" id="setupBtn">Instalar modelos (≈135 MB)</button>`;
+    <button class="go" type="button" id="setupBtn">${T("Instalar modelos (≈135 MB)")}</button>`;
   host.insertBefore(card, host.firstChild);
   $("#setupBtn").onclick = installBase;
 }
@@ -573,11 +837,11 @@ async function installModels(ids, onUpdate){
 async function installBase(){
   if(!requireLicense()) return;
   const btn = $("#setupBtn"), bar = $("#setupBar"), msg = $("#setupMsg");
-  btn.disabled = true; btn.textContent = "A descarregar…"; bar.hidden = false; msg.hidden = false; msg.textContent = "A ligar ao servidor dos modelos…";
+  btn.disabled = true; setT(btn, "A descarregar…"); bar.hidden = false; msg.hidden = false; setT(msg, "A ligar ao servidor dos modelos…");
   try {
     await installModels(["htdemucs","htdemucs_6s"], (p, t) => { $("i", bar).style.width = Math.round(p*100) + "%"; msg.textContent = t; });
     await refreshInfo(); ["vocals","drums","bass"].forEach(x => S.selected.add(x)); renderPicker(); updateGo(); toast("Modelos instalados — escolhe o que extrair");
-  } catch(e){ btn.disabled = false; btn.textContent = "Tentar de novo"; msg.textContent = e.message + " " + (e.hint||""); }
+  } catch(e){ btn.disabled = false; setT(btn, "Tentar de novo"); msg.textContent = T(e.message) + " " + T(e.hint||""); }
 }
 // Botão "Instalar …" por baixo de uma família (ex.: peças de bateria) quando há modelo descarregável.
 function installRow(cats){
@@ -585,13 +849,13 @@ function installRow(cats){
   if(!list.length) return null;
   const wrap = document.createElement("div"); wrap.className = "install-row";
   list.forEach(c => {
-    const m = c.install, names = cats.filter(x => x.install && x.install.id === m.id).map(x => x.label).join(", ");
+    const m = c.install, names = cats.filter(x => x.install && x.install.id === m.id).map(x => T(x.label)).join(", ");
     const b = document.createElement("button"); b.type = "button"; b.className = "ghost install-btn";
-    b.innerHTML = `<b>Instalar ${esc(m.name)}</b><span>${esc(names)} · ≈${m.size_mb} MB${m.license !== "verified" ? " · licença dos pesos a confirmar (uso pessoal)" : ""}</span>`;
+    b.innerHTML = `<b>${T("Instalar")} ${esc(T(m.name))}</b><span>${esc(names)} · ≈${m.size_mb} MB${m.license !== "verified" ? " · " + T("licença dos pesos a confirmar (uso pessoal)") : ""}</span>`;
     b.onclick = async () => { b.disabled = true;
-      try { await installModels([m.id], (p, t) => { b.innerHTML = `<b>A descarregar ${esc(m.name)}</b><span>${esc(t)}</span>`; });
-        await refreshInfo(); toast(m.name + " instalado"); }
-      catch(e){ b.disabled = false; b.innerHTML = `<b>Tentar de novo</b><span>${esc(e.message)} ${esc(e.hint||"")}</span>`; } };
+      try { await installModels([m.id], (p, t) => { b.innerHTML = `<b>${T("A descarregar")} ${esc(T(m.name))}</b><span>${esc(t)}</span>`; });
+        await refreshInfo(); toast(T(m.name) + " " + T("instalado")); }
+      catch(e){ b.disabled = false; b.innerHTML = `<b>${T("Tentar de novo")}</b><span>${esc(T(e.message))} ${esc(T(e.hint||""))}</span>`; } };
     wrap.appendChild(b);
   });
   return wrap;
@@ -607,8 +871,8 @@ function renderPicker(){
     const b = document.createElement("button");
     b.type = "button"; b.className = "stem " + cls; b.dataset.id = c.id; b.style.setProperty("--c", colorOf(c.id, c.family));
     b.setAttribute("aria-pressed", S.selected.has(c.id) ? "true" : "false");
-    b.disabled = !c.available; if(!c.available) b.title = c.reason || "Indisponível";
-    b.innerHTML = `<div class="stem-in"><span class="sw"></span><span style="min-width:0;display:block"><span class="nm" style="display:block">${esc(c.label)}</span><span class="ht" style="display:block">${esc(c.available ? c.hint : (c.reason||"Indisponível"))}</span></span><span class="ck"></span></div>`;
+    b.disabled = !c.available; if(!c.available) b.title = T(c.reason || "Indisponível");
+    b.innerHTML = `<div class="stem-in"><span class="sw"></span><span style="min-width:0;display:block"><span class="nm" style="display:block">${esc(T(c.label))}</span><span class="ht" style="display:block">${esc(T(c.available ? c.hint : (c.reason||"Indisponível")))}</span></span><span class="ck"></span></div>`;
     b.addEventListener("click", () => { S.selected.has(c.id) ? S.selected.delete(c.id) : S.selected.add(c.id); b.setAttribute("aria-pressed", S.selected.has(c.id)); updateGo(); });
     return b;
   };
@@ -630,20 +894,20 @@ function renderPicker(){
   }
   if(S.mode === "engine" && !S.info.models.some(m => m.usable)) firstRun();
   $("#roadmapCount").textContent = S.roadmap.length;
-  $("#roadmapList").innerHTML = S.roadmap.map(r => `<li><b>${esc(r.label)}</b> — ${esc(r.reason)}</li>`).join("");
+  $("#roadmapList").innerHTML = S.roadmap.map(r => `<li><b>${esc(T(r.label))}</b> — ${esc(T(r.reason))}</li>`).join("");
 }
 
 function renderQuality(){
   $$("#qualSeg button").forEach(b => {
     b.setAttribute("aria-pressed", b.dataset.q === S.quality);
-    b.innerHTML = QUAL_LABEL[b.dataset.q] + (b.dataset.q === S.rec ? '<span class="rec" title="Recomendado para este computador"></span>' : "");
+    b.innerHTML = T(QUAL_LABEL[b.dataset.q]) + (b.dataset.q === S.rec ? `<span class="rec" title="${T("Recomendado para este computador")}"></span>` : "");
     b.disabled = S.mode === "web" && b.dataset.q !== "balanced";
   });
-  $("#recTxt").textContent = S.mode === "engine" ? "● recomendado: " + QUAL_LABEL[S.rec] : "HTDemucs no browser";
+  $("#recTxt").textContent = S.mode === "engine" ? T("● recomendado: ") + T(QUAL_LABEL[S.rec]) : T("HTDemucs no browser");
 }
 
 function estimate(){
-  if(!S.file) return "Carrega uma mistura para começar.";
+  if(!S.file) return T("Carrega uma mistura para começar.");
   const dur = (+$("#prevSel").value) || S.file.duration;
   let rt = {fast:.35, balanced:.6, high:2.4, ultra:6}[S.quality];
   const sel = [...S.selected];
@@ -652,20 +916,20 @@ function estimate(){
   if(S.mode === "engine"){ const d = S.info.hardware.device; if(d === "cuda") rt /= 12; else if(d === "mps") rt /= 4; }
   else rt = ("gpu" in navigator) ? .5 : 3;
   const sec = dur * rt;
-  return "Estimativa: " + (sec < 90 ? Math.max(5, Math.round(sec)) + " s" : "≈ " + Math.round(sec/60) + " min") + " · " + sel.length + " pista(s) + Other";
+  return T("Estimativa: ") + (sec < 90 ? Math.max(5, Math.round(sec)) + " s" : "≈ " + Math.round(sec/60) + " min") + " · " + sel.length + T(" pista(s) + Other");
 }
 
 function updateGo(){
   const busy = S.job && !["completed","failed","cancelled"].includes(S.job.status);
   const ok = S.file && S.selected.size && (S.mode === "web" || S.outdir) && !busy;
   $("#goBtn").disabled = !ok;
-  $("#estTxt").textContent = !S.file ? "Carrega uma mistura para começar." : (S.mode === "engine" && !S.outdir) ? "Escolhe a pasta de trabalho antes de separar." : !S.selected.size ? "Escolhe pelo menos um instrumento." : estimate();
+  $("#estTxt").textContent = !S.file ? T("Carrega uma mistura para começar.") : (S.mode === "engine" && !S.outdir) ? T("Escolhe a pasta de trabalho antes de separar.") : !S.selected.size ? T("Escolhe pelo menos um instrumento.") : estimate();
 }
 
 function setFolder(path){
   S.outdir = path; store.set("outdir", path);
-  $("#folderName").textContent = path.split(/[\\/]/).filter(Boolean).pop() || path;
-  $("#folderPath").textContent = path;
+  setT($("#folderName"), path.split(/[\\/]/).filter(Boolean).pop() || path);
+  setT($("#folderPath"), path);
   updateGo();
 }
 
@@ -674,7 +938,7 @@ async function setInputFile(file){
   clearAlerts();
   try {
     if(S.mode === "engine"){
-      $("#estTxt").textContent = "A importar…";
+      $("#estTxt").textContent = T("A importar…");
       const info = await api("/api/upload?name=" + encodeURIComponent(file.name), {body: file, headers: {"Content-Type":"application/octet-stream"}});
       showFile(info);
     } else {
@@ -693,12 +957,15 @@ async function pickInputNative(){
     const info = await api("/api/probe", {json:{path:r.path}}); showFile(info);
   } catch(e){ alertBox(e.message, e.hint); }
 }
+function renderFileSpecs(info){
+  const bits = info.bit_depth ? info.bit_depth + "-bit" : "";
+  $("#fileSpecs").innerHTML = [String(info.format).toUpperCase(), (info.sample_rate/1000).toFixed(1).replace(".0","") + " kHz", bits, T(info.channels === 1 ? "mono" : "estéreo"), fmtDur(info.duration)].filter(Boolean).map(esc).map(x=>`<span>${x}</span>`).join("");
+}
 function showFile(info){
   S.file = info;
   $("#drop").hidden = true; $("#fileCard").hidden = false;
   $("#fileName").textContent = info.title || info.name;
-  const bits = info.bit_depth ? info.bit_depth + "-bit" : "";
-  $("#fileSpecs").innerHTML = [String(info.format).toUpperCase(), (info.sample_rate/1000).toFixed(1).replace(".0","") + " kHz", bits, info.channels === 1 ? "mono" : "estéreo", fmtDur(info.duration)].filter(Boolean).map(esc).map(x=>`<span>${x}</span>`).join("");
+  renderFileSpecs(info);
   $("#topSong").hidden = false; $("#topSongName").textContent = info.title || info.name;
   $("#topSongSpecs").textContent = [String(info.format).toUpperCase(), (info.sample_rate/1000).toFixed(1).replace(".0","") + " kHz", info.bit_depth ? info.bit_depth + "-bit" : "", fmtDur(info.duration)].filter(Boolean).join(" · ");
   if(S.mode === "web" && info.sample_rate !== 44100) alertBox("Modo web trabalha a 44,1 kHz.", "A app desktop preserva a taxa original (48, 88,2, 96 e 192 kHz).", "info");
@@ -719,15 +986,15 @@ async function runEngine(){
   es.addEventListener("end", async ev => {
     es.close(); const snap = JSON.parse(ev.data); S.job = snap; updateGo();
     if(snap.status === "completed"){ await loadEngineResult(snap.result); }
-    else if(snap.status === "failed"){ $("#progBox").hidden = true; $("#resTitle").textContent = "A separação falhou"; alertBox(snap.error.message, snap.error.hint); }
-    else { $("#progBox").hidden = true; $("#resTitle").textContent = "Separação cancelada"; }
+    else if(snap.status === "failed"){ $("#progBox").hidden = true; setT($("#resTitle"), "A separação falhou"); alertBox(snap.error.message, snap.error.hint); }
+    else { $("#progBox").hidden = true; setT($("#resTitle"), "Separação cancelada"); }
   });
   es.onerror = () => { /* o browser volta a ligar sozinho; o estado final chega pelo evento end */ };
 }
 
 let progT0 = 0, progTimer = 0;
 function startProgress(){
-  $("#progBox").hidden = false; $("#resTitle").textContent = "A separar…"; progT0 = performance.now();
+  $("#progBox").hidden = false; setT($("#resTitle"), "A separar…"); progT0 = performance.now();
   $$("#stages span").forEach(s => s.className = ""); onProgress({stage:"import", progress:0, message:"A preparar"});
   clearInterval(progTimer); progTimer = setInterval(() => { $("#progTime").textContent = fmtDur((performance.now()-progT0)/1000); }, 500);
   updateGo();
@@ -735,33 +1002,36 @@ function startProgress(){
 function onProgress(e){
   const pct = Math.round((e.progress||0)*100);
   $("#progBar").style.width = pct + "%"; $("#progPct").textContent = pct + "%";
-  $("#progMsg").textContent = e.message || STAGE_LABEL[e.stage] || "";
-  if(e.model) $("#progModel").textContent = "Modelo: " + e.model + (e.stems ? " → " + e.stems.join(", ") : "") + (e.cached ? " (cache)" : "");
+  S.lastProg = e;
+  setT($("#progMsg"), e.message || STAGE_LABEL[e.stage] || "");
+  if(e.model){ S.lastModel = e; }
+  const pm = e.model ? e : S.lastModel;
+  if(pm) $("#progModel").textContent = T("Modelo") + ": " + T(pm.model) + (pm.stems ? " → " + pm.stems.map(id => T((S.cats.find(c=>c.id===id)||{label:id}).label)).join(", ") : "") + (pm.cached ? " (cache)" : "");
   const order = ["import","separate","reconstruct","export"]; const i = order.indexOf(e.stage);
   if(i >= 0) $$("#stages span").forEach((s,j) => s.className = j < i ? "done" : j === i ? "on" : "");
   if(["done","failed","cancelled"].includes(e.stage)){ clearInterval(progTimer); if(e.stage==="done") $$("#stages span").forEach(s=>s.className="done"); }
 }
 
 async function loadEngineResult(res){
-  $("#progMsg").textContent = "A carregar pistas no mixer…";
+  setT($("#progMsg"), "A carregar pistas no mixer…");
   S.result = res; S.example = false;
   const sr = res.report.sample_rate;
   const tracks = [];
   try {
     for(const [i, t] of res.tracks.entries()){
-      $("#progMsg").textContent = `A carregar pistas no mixer… ${i+1}/${res.tracks.length}`;
+      setT($("#progMsg"), `A carregar pistas no mixer… ${i+1}/${res.tracks.length}`);
       const buf = await loadPcm(t.file, sr);
       tracks.push(makeTrack({id:t.id, label:t.label, family:t.family, buffer:buf, muted:t.muted, metrics:t.metrics, presence:t.presence_db, file:t.file}));
     }
     setTracks(tracks, sr);
   } catch(e){
     console.error(e); $("#progBox").hidden = true; $("#revealBtn").hidden = false;
-    $("#resTitle").textContent = "Stems exportados";
+    setT($("#resTitle"), "Stems exportados");
     alertBox("Os stems foram gravados na pasta, mas o mixer não os conseguiu abrir.", "Carrega em “Abrir pasta” para os usar na DAW. Detalhe: " + (e && e.message || e));
     showReport(res.report, res.outdir); return;
   }
   $("#progBox").hidden = true;
-  $("#resTitle").textContent = "A exportação está pronta";
+  setT($("#resTitle"), "A exportação está pronta");
   $("#revealBtn").hidden = false;
   showReport(res.report, res.outdir);
 }
@@ -801,7 +1071,7 @@ async function runWeb(){
     const prev = +$("#prevSel").value;
     if(prev){ const n = prev*44100, s = Math.max(0, Math.min(Math.floor(L.length*.3), L.length-n)); L = L.slice(s, s+n); R = R.slice(s, s+n); }
     const dl = p => onProgress({stage:"import", progress:.05 + p*.2, message:"A descarregar o modelo " + Math.round(p*100) + "%", model:"HTDemucs v4 (ONNX)"});
-    const attach = () => { webProc.onProgress = ({progress}) => onProgress({stage:"separate", progress:.25 + progress*.65, message:"A separar no " + (webProc.usesGpu ? "GPU (WebGPU)" : "CPU (WASM) — mais lento"), model:"HTDemucs v4 (ONNX)"}); };
+    const attach = () => { webProc.onProgress = ({progress}) => onProgress({stage:"separate", progress:.25 + progress*.65, message:webProc.usesGpu ? "A separar no GPU (WebGPU)" : "A separar no CPU (WASM) — mais lento", model:"HTDemucs v4 (ONNX)"}); };
     let out, triedGpu = false;
     try {
       if(!webProc){
@@ -837,13 +1107,13 @@ async function runWeb(){
     if(S.dirHandle) await saveWebStems();
     onProgress({stage:"done", progress:1, message:"Concluído"});
     S.job = {status:"completed"}; $("#progBox").hidden = true;
-    $("#resTitle").textContent = S.dirHandle ? "Stems gravados na pasta" : "Separação concluída";
+    setT($("#resTitle"), S.dirHandle ? "Stems gravados na pasta" : "Separação concluída");
     $("#dlBtn").hidden = !!S.dirHandle;
     const rec = reconstructionPct(tracks, L, R);
     showReport({sample_rate:44100, frames:n, final_reconstruction:{accuracy_pct:rec}, plan:[{model:"HTDemucs v4 (ONNX, browser)"}], dropped:[], warnings:[]}, S.dirHandle ? S.dirHandle.name : null);
   } catch(e){
-    console.error(e); S.job = {status:"failed"}; $("#progBox").hidden = true; $("#resTitle").textContent = "A separação falhou";
-    alertBox("Não foi possível separar no browser.", (e && e.message ? e.message + " " : "") + "Experimenta no Chrome/Edge recente ou usa a app desktop.");
+    console.error(e); S.job = {status:"failed"}; $("#progBox").hidden = true; setT($("#resTitle"), "A separação falhou");
+    alertBox("Não foi possível separar no browser.", (e && e.message ? T(e.message) + " " : "") + T("Experimenta no Chrome/Edge recente ou usa a app desktop."));
   }
   clearInterval(progTimer); updateGo();
 }
@@ -949,10 +1219,10 @@ function tick(){
   updateClock();
   if(A.playing) A.raf = requestAnimationFrame(tick);
 }
-function setPlayIcon(){ $("#playIco").innerHTML = A.playing ? '<rect x="2.5" y="1.5" width="3" height="11" fill="currentColor"/><rect x="8.5" y="1.5" width="3" height="11" fill="currentColor"/>' : '<path d="M3 1.5v11l9-5.5z" fill="currentColor"/>'; $("#playBtn").setAttribute("aria-label", A.playing ? "Pausa" : "Reproduzir"); }
+function setPlayIcon(){ $("#playIco").innerHTML = A.playing ? '<rect x="2.5" y="1.5" width="3" height="11" fill="currentColor"/><rect x="8.5" y="1.5" width="3" height="11" fill="currentColor"/>' : '<path d="M3 1.5v11l9-5.5z" fill="currentColor"/>'; $("#playBtn").setAttribute("aria-label", T(A.playing ? "Pausa" : "Reproduzir")); }
 function updateClock(){
   const p = position();
-  $("#tcNow").textContent = fmtTime(p); $("#tcSmp").textContent = Math.round(p*A.sr).toLocaleString("pt-PT") + " smp · " + (A.sr/1000) + " kHz";
+  $("#tcNow").textContent = fmtTime(p); $("#tcSmp").textContent = Math.round(p*A.sr).toLocaleString(LOCALE()) + " smp · " + (A.sr/1000) + " kHz";
   const ph = $("#playhead"); if(ph && A.dur){ const lane = $(".trow .lane"); if(lane){ ph.style.transform = `translateX(${lane.offsetLeft + p/A.dur*lane.clientWidth}px)`; } }
 }
 
@@ -990,24 +1260,24 @@ function drawRuler(cv){
 function renderTracks(){
   const host = $("#tracksInner");
   if(!A.tracks.length){
-    host.innerHTML = `<div class="empty"><strong>Nenhuma pista ainda</strong>Separa uma mistura ou usa “Abrir stems…” para carregar ficheiros já separados no mixer.</div>`;
+    host.innerHTML = `<div class="empty"><strong>${T("Nenhuma pista ainda")}</strong>${T("Separa uma mistura ou usa “Abrir stems…” para carregar ficheiros já separados no mixer.")}</div>`;
     $("#transport").querySelectorAll("button").forEach(b => b.disabled = true); return;
   }
   $("#transport").querySelectorAll("button").forEach(b => b.disabled = false);
   A.refPeak = Math.max(1e-3, ...A.tracks.map(t => { let m=0; const P=t.peaks; for(let i=0;i<P.length;i++){ const v=Math.abs(P[i]); if(v>m) m=v; } return m; }));
   host.style.setProperty("--lane-w", A.zoom === 1 ? "minmax(0,1fr)" : `calc((min(100vw,1680px) - 420px) * ${A.zoom})`);
-  const rows = [`<div class="trow ruler"><div class="thdr"><span class="eyebrow">${A.tracks.length} pistas</span>${S.example?'<span class="example-flag">sessão de exemplo</span>':''}</div><div class="lane" id="rulerLane"><canvas></canvas></div></div>`];
+  const rows = [`<div class="trow ruler"><div class="thdr"><span class="eyebrow">${T(A.tracks.length + " pistas")}</span>${S.example?`<span class="example-flag">${T("sessão de exemplo")}</span>`:''}</div><div class="lane" id="rulerLane"><canvas></canvas></div></div>`];
   A.tracks.forEach((t,i) => {
     const m = t.metrics || {};
     const meta = [m.peak_db != null ? "pk " + fmtDb(m.peak_db) : null, m.lufs != null ? fmtDb(m.lufs) + " LUFS" : null, t.buffer.numberOfChannels === 1 ? "mono" : "st"].filter(Boolean).join(" · ");
     rows.push(`<div class="trow" data-id="${esc(t.id)}" style="--c:${colorOf(t.id,t.family)}">
       <div class="thdr">
-        <div class="tname"><span title="${esc(t.label)}">${esc(t.label)}</span></div>
-        <div class="ms"><button class="m" type="button" aria-pressed="${t.muted}" title="Mute">M</button><button class="s" type="button" aria-pressed="${t.solo}" title="Solo">S</button><button class="i" type="button" aria-pressed="${t.open}" title="Análise técnica">i</button></div>
+        <div class="tname"><span title="${esc(T(t.label))}">${esc(T(t.label))}</span></div>
+        <div class="ms"><button class="m" type="button" aria-pressed="${t.muted}" title="Mute">M</button><button class="s" type="button" aria-pressed="${t.solo}" title="Solo">S</button><button class="i" type="button" aria-pressed="${t.open}" title="${T("Análise técnica")}">i</button></div>
         <div class="tmeta">${esc(meta)}</div>
-        <div class="faders"><input type="range" class="vol" id="vol_${i}" min="0" max="150" step="1" value="${Math.round(t.vol*100)}" aria-label="Volume ${esc(t.label)}">
+        <div class="faders"><input type="range" class="vol" id="vol_${i}" min="0" max="150" step="1" value="${Math.round(t.vol*100)}" aria-label="Volume ${esc(T(t.label))}">
           <output class="volv">${volText(t.vol)}</output>
-          <input type="range" class="pan" id="pan_${i}" min="-100" max="100" step="1" value="${Math.round(t.pan*100)}" aria-label="Pan ${esc(t.label)}" title="Pan (duplo clique = centro)"></div>
+          <input type="range" class="pan" id="pan_${i}" min="-100" max="100" step="1" value="${Math.round(t.pan*100)}" aria-label="Pan ${esc(T(t.label))}" title="${T("Pan (duplo clique = centro)")}"></div>
       </div>
       <div class="lane"><canvas></canvas></div>
       ${t.open ? detailsHtml(t) : ""}
@@ -1040,7 +1310,7 @@ function detailsHtml(t){
     ["Crest factor", f(m.crest_db,"dB")],["Dinâmica", f(m.dynamic_range_db,"dB")],["Largura estéreo", m.stereo_width==null?"—":Math.round(m.stereo_width*100)+" %"],
     ["Correlação", m.correlation==null?"—":m.correlation.toFixed(2)],["Centróide espectral", m.spectral_centroid_hz==null?"—":Math.round(m.spectral_centroid_hz)+" Hz"],
     ["Presença na mistura", t.presence==null?"—":fmtDb(t.presence)+" dB"]];
-  return `<div class="details">${items.map(([k,v])=>`<div>${k}<b>${v}</b></div>`).join("")}</div>`;
+  return `<div class="details">${items.map(([k,v])=>`<div>${T(k)}<b>${v}</b></div>`).join("")}</div>`;
 }
 function bindSeek(lane){
   const at = ev => { const r = lane.getBoundingClientRect(); return (Math.max(0, Math.min(r.width, ev.clientX - r.left)) / r.width) * A.dur; };
@@ -1056,7 +1326,7 @@ function bindSeek(lane){
    grava em 32-bit float e avisa. */
 async function exportMix(){
   if(!A.tracks.length) return;
-  const btn = $("#exportMixBtn"); btn.disabled = true; btn.textContent = "A exportar…";
+  const btn = $("#exportMixBtn"); btn.disabled = true; setT(btn, "A exportar…");
   try {
     const n = Math.round(A.dur * A.sr);
     const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
@@ -1071,10 +1341,10 @@ async function exportMix(){
     if(peak > 1 && fmt !== "wav32f"){ fmt = "wav32f"; warn = `Pico de ${fmtDb(db(peak),2)} dBFS: gravado em 32-bit float para não cortar. Baixa o volume se precisares de inteiro.`; }
     const song = (S.result && S.result.report.source ? S.result.report.source.name : (S.file ? S.file.name : "Sessao")).replace(/[^\w\- ]+/g,"_");
     const where = await deliverBlob(encodeWav(out, fmt), `${song}_Mix_STEMS4U.wav`);
-    toast(warn || ("Mistura exportada" + (S.mode === "engine" ? ": " + String(where).split(/[\\/]/).pop() : "")));
+    toast(warn ? T(warn) : (T("Mistura exportada") + (S.mode === "engine" ? ": " + String(where).split(/[\\/]/).pop() : "")));
     if(warn) alertBox("Mistura exportada sem clipping.", warn, "info");
   } catch(e){ alertBox("Não foi possível exportar a mistura.", e.message); }
-  btn.disabled = false; btn.textContent = "Exportar mistura";
+  btn.disabled = false; setT(btn, "Exportar mistura");
 }
 function encodeWav(buf, fmt){
   const ch = buf.numberOfChannels, n = buf.length, sr = buf.sampleRate;
@@ -1132,7 +1402,7 @@ async function openStemFiles(files){
       const label = f.name.replace(/\.[^.]+$/,"").replace(/^\d+_/,""); const fam = guessFamily(label);
       tracks.push(makeTrack({id, label, family: fam, buffer: b, metrics: jsMetrics(b)})); }
     const n = Math.max(...tracks.map(t=>t.buffer.length)); if(tracks.some(t=>t.buffer.length !== n)) alertBox("Os ficheiros têm durações diferentes.", "Foram alinhados pelo início; stems do STEMS4U têm sempre a mesma duração.", "info");
-    S.example = false; S.result = null; setTracks(tracks, sr); $("#resTitle").textContent = tracks.length + " stems abertos no mixer"; $("#reportPanel").hidden = true;
+    S.example = false; S.result = null; setTracks(tracks, sr); setT($("#resTitle"), tracks.length + " stems abertos no mixer"); $("#reportPanel").hidden = true;
   } catch(e){ alertBox("Não foi possível abrir os stems.", e.message); }
 }
 function guessFamily(n){ n = n.toLowerCase(); if(/voc|voz|lead|backing|coro/.test(n)) return "vocals"; if(/drum|bater|kick|bombo|snare|tarola|tom|hat|cymb|prato/.test(n)) return "drums";
@@ -1144,27 +1414,27 @@ async function openProject(){
     for(const t of proj.tracks){
       tracks.push(makeTrack({id:t.id, label:t.label, family:t.family, muted:t.muted, buffer: await loadPcm(t.file, sr)})); }
     S.result = {outdir: proj.folder, report: proj.report}; S.example = false; setTracks(tracks, sr);
-    $("#resTitle").textContent = proj.name; $("#revealBtn").hidden = false; showReport(proj.report, proj.folder);
+    setT($("#resTitle"), proj.name); $("#revealBtn").hidden = false; showReport(proj.report, proj.folder);
   } catch(e){ alertBox(e.message, e.hint); }
 }
 
 /* ------------------------------------------------------------------ relatório */
-function showReport(rep, outdir){
-  const p = $("#reportPanel"); p.hidden = false;
+function showReport(rep, outdir, repaint){
+  const p = $("#reportPanel"); p.hidden = false; S.lastReport = [rep, outdir];
   const mr = rep.model_reconstruction, fr = rep.final_reconstruction || {};
   const cells = [
     ["Reconstrução final", fr.accuracy_pct != null ? fr.accuracy_pct.toFixed(3) + " %" : "—"],
     ["Soma do modelo vs mistura", mr ? mr.accuracy_pct.toFixed(2) + " % · " + (mr.snr_db != null ? mr.snr_db.toFixed(1) + " dB SNR" : "") : "—"],
-    ["Amostras por pista", rep.frames ? Number(rep.frames).toLocaleString("pt-PT") : "—"],
+    ["Amostras por pista", rep.frames ? Number(rep.frames).toLocaleString(LOCALE()) : "—"],
     ["Taxa de amostragem", rep.sample_rate ? (rep.sample_rate/1000) + " kHz" : "—"],
     ["Modelos", (rep.plan||[]).map(x=>x.model).join(" → ") || "—"],
   ];
-  $("#report").innerHTML = cells.map(([k,v]) => `<div class="kv"><span>${esc(k)}</span><b style="font-size:${String(v).length>22?'12.5px':'16px'}">${esc(v)}</b></div>`).join("");
-  $("#repTime").textContent = rep.elapsed_s != null ? "processado em " + fmtDur(rep.elapsed_s) : "";
+  $("#report").innerHTML = cells.map(([k,v]) => `<div class="kv"><span>${esc(T(k))}</span><b style="font-size:${String(v).length>22?'12.5px':'16px'}">${esc(v)}</b></div>`).join("");
+  $("#repTime").textContent = rep.elapsed_s != null ? T("processado em " + fmtDur(rep.elapsed_s)) : "";
   const facts = [];
-  if(outdir) facts.push(`<span class="badge" title="${esc(outdir)}">Pasta: ${esc(String(outdir).split(/[\\/]/).pop())}</span>`);
-  (rep.dropped||[]).forEach(d => facts.push(`<span class="badge warn" title="${esc(d.reason)}">${esc(d.label)} sem conteúdo → em Other</span>`));
-  (rep.warnings||[]).forEach(w => alertBox("Aviso de exportação", w, "info"));
+  if(outdir) facts.push(`<span class="badge" title="${esc(outdir)}">${LANG === "en" ? "Folder" : "Pasta"}: ${esc(String(outdir).split(/[\\/]/).pop())}</span>`);
+  (rep.dropped||[]).forEach(d => facts.push(`<span class="badge warn" title="${esc(T(d.reason))}">${esc(T(d.label))} ${LANG === "en" ? "empty → in Other" : "sem conteúdo → em Other"}</span>`));
+  if(!repaint) (rep.warnings||[]).forEach(w => alertBox("Aviso de exportação", w, "info"));
   $("#facts").innerHTML = facts.join("");
 }
 
@@ -1187,42 +1457,45 @@ function loadExampleSession(){
   ];
   tracks.forEach(t => t.metrics = jsMetrics(t.buffer));
   S.example = true; setTracks(tracks, sr);
-  $("#resTitle").textContent = "Sessão de exemplo";
+  setT($("#resTitle"), "Sessão de exemplo");
   alertBox("Sessão de exemplo — sinais sintéticos gerados no browser.", "Serve para experimentar o mixer (mute, solo, volume, pan, seek, exportar mistura). Carrega uma música para fazer uma separação real.", "info");
 }
 
 /* ------------------------------------------------------------------ modais */
-function openModal(title, html){ $("#modalTitle").textContent = title; $("#modalBody").innerHTML = html; $("#modal").hidden = false; $("#modalClose").focus(); }
+function openModal(title, html, fn){ const wasOpen = !$("#modal").hidden; S.modalFn = fn || null; setT($("#modalTitle"), title); $("#modalBody").innerHTML = html; $("#modal").hidden = false; if(!wasOpen) $("#modalClose").focus(); }
 function closeModal(){ $("#modal").hidden = true; }
 function modelsModal(){
   if(S.mode === "web"){
-    openModal("Sobre o modo web", `<div class="sec"><p style="margin:0">No browser o STEMS4U corre o <b>HTDemucs v4</b> (Meta, licença MIT) convertido para ONNX, com WebGPU quando existe e WebAssembly como alternativa. Nada sai do teu computador: a música é processada localmente; só o modelo (≈172 MB) é descarregado uma vez e fica em cache.</p>
-      <p class="muted" style="margin:0">Separa Voz, Bateria, Baixo e Other a 44,1 kHz. Peças de bateria, voz principal/coros, guitarra, piano, taxas originais (até 192 kHz), cache de projectos e fila de lotes estão na app desktop para macOS e Windows.</p></div>`);
+    openModal("Sobre o modo web", LANG === "en"
+      ? `<div class="sec"><p style="margin:0">In the browser STEMS4U runs <b>HTDemucs v4</b> (Meta, MIT license) converted to ONNX, using WebGPU when available and WebAssembly as the fallback. Nothing leaves your computer: the music is processed locally; only the model (≈172 MB) is downloaded once and cached.</p>
+      <p class="muted" style="margin:0">Separates Vocals, Drums, Bass and Other at 44.1 kHz. Drum pieces, lead/backing vocals, guitar, piano, original sample rates (up to 192 kHz), project cache and batch queue are in the desktop app for macOS and Windows.</p></div>`
+      : `<div class="sec"><p style="margin:0">No browser o STEMS4U corre o <b>HTDemucs v4</b> (Meta, licença MIT) convertido para ONNX, com WebGPU quando existe e WebAssembly como alternativa. Nada sai do teu computador: a música é processada localmente; só o modelo (≈172 MB) é descarregado uma vez e fica em cache.</p>
+      <p class="muted" style="margin:0">Separa Voz, Bateria, Baixo e Other a 44,1 kHz. Peças de bateria, voz principal/coros, guitarra, piano, taxas originais (até 192 kHz), cache de projectos e fila de lotes estão na app desktop para macOS e Windows.</p></div>`, modelsModal);
     return;
   }
   const rows = S.info.models.map(m => {
-    const lic = m.license; const st = lic.status === "verified" ? '<span class="pill ok">licença verificada</span>' : '<span class="pill warn">licença dos pesos a confirmar</span>';
-    const outs = Object.keys(m.outputs).filter(x=>x!=="other").map(id => (S.cats.find(c=>c.id===id)||{label:id}).label).join(", ");
-    const action = m.installed ? `<button class="ghost" data-rm="${esc(m.id)}" type="button">Remover</button>` : (m.manual ? '<span class="muted">Instalação manual</span>' : (m.backend === "audio_separator" ? '<span class="muted">Só build de desenvolvimento</span>' : `<button class="ghost" data-inst="${esc(m.id)}" type="button">Instalar · ${m.size_mb} MB</button>`));
-    return `<div class="mitem"><div><h3>${esc(m.name)} ${m.installed ? '<span class="pill ok">instalado</span>' : ''}</h3>
-      <p>${esc(m.arch)} · v${esc(m.version)} · ${m.input ? "entrada: " + esc(m.input) : "entrada: mistura"} → ${esc(outs)}</p>
-      <p>${st}<span class="pill">pesos: ${esc(lic.weights)}</span><span class="pill">RAM ${m.ram_gb} GB</span><span class="pill">VRAM ${m.vram_gb} GB</span><span class="pill">CPU ≈ ${m.speed_cpu_rt}× tempo real</span></p>
-      ${m.quality && m.quality.nota ? `<p>${esc(m.quality.nota)}</p>` : ""}${m.manual && !m.installed ? `<p>${esc(m.manual)}</p>` : ""}${!m.usable && m.installed ? `<p style="color:var(--warn)">${esc(m.reason)}</p>` : ""}</div>
+    const lic = m.license; const st = lic.status === "verified" ? `<span class="pill ok">${T("licença verificada")}</span>` : `<span class="pill warn">${T("licença dos pesos a confirmar")}</span>`;
+    const outs = Object.keys(m.outputs).filter(x=>x!=="other").map(id => T((S.cats.find(c=>c.id===id)||{label:id}).label)).join(", ");
+    const action = m.installed ? `<button class="ghost" data-rm="${esc(m.id)}" type="button">${T("Remover")}</button>` : (m.manual ? `<span class="muted">${T("Instalação manual")}</span>` : (m.backend === "audio_separator" ? `<span class="muted">${T("Só build de desenvolvimento")}</span>` : `<button class="ghost" data-inst="${esc(m.id)}" type="button">${T("Instalar")} · ${m.size_mb} MB</button>`));
+    return `<div class="mitem"><div><h3>${esc(T(m.name))} ${m.installed ? `<span class="pill ok">${T("instalado")}</span>` : ''}</h3>
+      <p>${esc(T(m.arch))} · v${esc(m.version)} · ${T("entrada")}: ${m.input ? esc(T((S.cats.find(c=>c.id===m.input)||{label:m.input}).label)) : T("mistura")} → ${esc(outs)}</p>
+      <p>${st}<span class="pill">${T("pesos")}: ${esc(T(lic.weights))}</span><span class="pill">RAM ${m.ram_gb} GB</span><span class="pill">VRAM ${m.vram_gb} GB</span><span class="pill">CPU ≈ ${m.speed_cpu_rt}× ${T("tempo real")}</span></p>
+      ${m.quality && m.quality.nota ? `<p>${esc(T(m.quality.nota))}</p>` : ""}${m.manual && !m.installed ? `<p>${esc(T(m.manual))}</p>` : ""}${!m.usable && m.installed ? `<p style="color:var(--warn)">${esc(T(m.reason))}</p>` : ""}</div>
       <div>${action}</div></div>`;
   }).join("");
-  openModal("Gestor de modelos", `<div class="mlist">${rows}</div>`);
-  $$("[data-inst]").forEach(b => b.onclick = async () => { b.disabled = true; b.textContent = "A descarregar…";
+  openModal("Gestor de modelos", `<div class="mlist">${rows}</div>`, modelsModal);
+  $$("[data-inst]").forEach(b => b.onclick = async () => { b.disabled = true; b.textContent = T("A descarregar…");
     try { await installModels([b.dataset.inst], (p, t) => { b.textContent = t; }); await refreshInfo(); modelsModal(); toast("Modelo instalado"); }
-    catch(e){ b.disabled = false; b.textContent = "Tentar de novo"; alertBox(e.message, e.hint); } });
+    catch(e){ b.disabled = false; b.textContent = T("Tentar de novo"); alertBox(e.message, e.hint); } });
   $$("[data-rm]").forEach(b => b.onclick = async () => { await api("/api/models/remove", {json:{id:b.dataset.rm}}); await refreshInfo(); modelsModal(); });
 }
 async function refreshInfo(){ S.info = await api("/api/info"); S.cats = S.info.categories; renderPicker(); updateGo(); }
 function hwModal(){
-  if(S.mode === "web"){ openModal("Hardware", `<div class="sec">${("gpu" in navigator) ? "WebGPU está disponível neste browser: a separação usa a placa gráfica." : "Este browser não expõe WebGPU: a separação usa WebAssembly no CPU (mais lenta)."}</div>`); return; }
+  if(S.mode === "web"){ openModal("Hardware", `<div class="sec">${T(("gpu" in navigator) ? "WebGPU está disponível neste browser: a separação usa a placa gráfica." : "Este browser não expõe WebGPU: a separação usa WebAssembly no CPU (mais lenta).")}</div>`, hwModal); return; }
   const h = S.info.hardware;
   const kv = [["Sistema", h.os + (h.macos_version ? " (macOS " + h.macos_version + ")" : "")],["Arquitectura", h.arch],["CPU", h.cpu + " · " + h.cpu_threads + " threads"],["RAM", h.ram_gb ? h.ram_gb + " GB" : "—"],
-    ["Acelerador", h.device === "cpu" ? "Nenhum (CPU)" : h.device.toUpperCase() + " · " + h.gpu],["VRAM", h.vram_gb ? h.vram_gb + " GB" : "—"],["PyTorch", h.torch || "não instalado"],["Recomendado", QUAL_LABEL[h.recommendation.quality]]];
-  openModal("Hardware detectado", `<div class="hwgrid">${kv.map(([k,v])=>`<div class="kv"><span>${esc(k)}</span><b style="font-size:13px">${esc(v)}</b></div>`).join("")}</div><div class="sec" style="padding-top:0"><span class="muted">${esc(h.recommendation.reason)}</span></div>`);
+    ["Acelerador", h.device === "cpu" ? T("Nenhum (CPU)") : h.device.toUpperCase() + " · " + h.gpu],["VRAM", h.vram_gb ? h.vram_gb + " GB" : "—"],["PyTorch", h.torch || T("não instalado")],["Recomendado", T(QUAL_LABEL[h.recommendation.quality])]];
+  openModal("Hardware detectado", `<div class="hwgrid">${kv.map(([k,v])=>`<div class="kv"><span>${esc(T(k))}</span><b style="font-size:13px">${esc(v)}</b></div>`).join("")}</div><div class="sec" style="padding-top:0"><span class="muted">${esc(T(h.recommendation.reason))}</span></div>`, hwModal);
 }
 
 /* ------------------------------------------------------------------ eventos */
@@ -1244,14 +1517,14 @@ function bindUI(){
   $("#folderBtn").onclick = async () => {
     if(S.mode === "engine"){
       if(S.info.native_dialogs){ try { const r = await api("/api/pick", {json:{kind:"folder"}}); if(r.path) setFolder(r.path); } catch(e){ alertBox(e.message, e.hint); } }
-      else { $("#folderPath").textContent = "Diálogos nativos indisponíveis neste modo; usa a CLI com --out."; }
+      else { setT($("#folderPath"), "Diálogos nativos indisponíveis neste modo; usa a CLI com --out."); }
     } else if(window.showDirectoryPicker){
-      try { S.dirHandle = await window.showDirectoryPicker({mode:"readwrite"}); $("#folderName").textContent = S.dirHandle.name; $("#folderPath").textContent = "Os stems são gravados directamente nesta pasta."; } catch(e){}
-    } else { $("#folderName").textContent = "Transferências"; $("#folderPath").textContent = "Este browser não permite escolher pasta: usa “Guardar stems” no fim."; }
+      try { S.dirHandle = await window.showDirectoryPicker({mode:"readwrite"}); setT($("#folderName"), S.dirHandle.name); setT($("#folderPath"), "Os stems são gravados directamente nesta pasta."); } catch(e){}
+    } else { setT($("#folderName"), "Transferências"); setT($("#folderPath"), "Este browser não permite escolher pasta: usa “Guardar stems” no fim."); }
     updateGo();
   };
   $("#goBtn").onclick = () => S.mode === "engine" ? runEngine() : runWeb();
-  $("#cancelBtn").onclick = async () => { if(S.mode === "engine" && S.job && S.job.id){ await api(`/api/jobs/${S.job.id}/cancel`, {json:{}}); $("#progMsg").textContent = "A cancelar com segurança…"; } else toast("No modo web a separação termina o bloco actual antes de parar."); };
+  $("#cancelBtn").onclick = async () => { if(S.mode === "engine" && S.job && S.job.id){ await api(`/api/jobs/${S.job.id}/cancel`, {json:{}}); setT($("#progMsg"), "A cancelar com segurança…"); } else toast("No modo web a separação termina o bloco actual antes de parar."); };
   $("#playBtn").onclick = toggle; $("#stopBtn").onclick = () => stop();
   $("#loopBtn").onclick = e => { A.loop = !A.loop; e.currentTarget.setAttribute("aria-pressed", A.loop); };
   $("#zoomIn").onclick = () => { A.zoom = Math.min(16, A.zoom*2); renderTracks(); };
@@ -1262,6 +1535,7 @@ function bindUI(){
   $("#importStemsBtn").onclick = () => $("#stemsInput").click();
   $("#stemsInput").onchange = e => { openStemFiles(e.target.files); e.target.value = ""; };
   $("#modelsBtn").onclick = modelsModal; $("#hwChip").onclick = hwModal;
+  $$(".lang-sw button").forEach(b => b.onclick = () => setLang(b.dataset.lang));
   $("#modalClose").onclick = closeModal; $("#modal").addEventListener("click", e => { if(e.target.id === "modal") closeModal(); });
   document.addEventListener("keydown", e => {
     const tag = (e.target.tagName || "").toLowerCase();
@@ -1298,5 +1572,6 @@ if(!flexGapSupported()){
     .observe(document.body, {childList:true, subtree:true});
 }
 
+captureStatic(); applyStatic();
 boot();
 </script>

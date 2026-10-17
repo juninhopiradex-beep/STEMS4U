@@ -16,7 +16,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-from . import __version__, audio_io, config, hardware, stems
+from . import __version__, audio_io, config, hardware, i18n, stems
 from .license import License, locked_error
 from .config import UserError, get_logger
 from .jobs import JobManager
@@ -98,7 +98,8 @@ class Engine:
         return {"app": "STEMS4U by Piradex", "version": __version__, "build": build_profile(),
                 "hardware": self.hw(), "categories": cats, "roadmap": stems.ROADMAP,
                 "models": self.registry.list(), "formats": list(audio_io.EXPORT_FORMATS),
-                "native_dialogs": self.picker is not None, "license": self.license.status()}
+                "native_dialogs": self.picker is not None, "license": self.license.status(),
+                "lang": i18n.reload()}
 
     def require_license(self):
         if not self.license.unlocked:
@@ -142,7 +143,7 @@ def make_handler(engine: Engine):
                     data = ui_path().read_bytes()
                     if not data.lstrip().lower().startswith(b"<!doctype"):
                         # o mesmo ficheiro é publicado como página web (que recebe o esqueleto noutro lado)
-                        data = b'<!doctype html><html lang="pt"><head><meta charset="utf-8">' + data
+                        data = (f'<!doctype html><html lang="{i18n.current()}"><head><meta charset="utf-8">').encode() + data
                     self.send_response(200)
                     self.send_header("Content-Type", "text/html; charset=utf-8")
                     self.send_header("Content-Length", str(len(data)))
@@ -159,6 +160,8 @@ def make_handler(engine: Engine):
                     return self._json(engine.info())
                 if u.path == "/api/license":
                     return self._json(engine.license.status())
+                if u.path == "/api/lang":
+                    return self._json({"lang": i18n.reload()})
                 if u.path == "/api/jobs":
                     return self._json(engine.jobs.list())
                 if u.path.startswith("/api/jobs/") and u.path.endswith("/events"):
@@ -289,6 +292,8 @@ def make_handler(engine: Engine):
                     msg = {"wrong": "Senha errada.", "expired": "Esta senha beta já expirou."}.get(res, "")
                     return self._json({"result": res, "message": msg, "status": engine.license.status()},
                                       200 if res == "ok" else 403)
+                if u.path == "/api/lang":
+                    return self._json({"lang": i18n.set(str(b.get("lang", "pt")))})
                 if u.path == "/api/license/lock":
                     engine.license.lock()
                     return self._json(engine.license.status())

@@ -1,6 +1,6 @@
 # STEMS4U by Piradex — Arquitetura técnica
 
-Versão 0.1 (Fase 1) · Outubro 2026
+Versão 2.0.0 · Outubro 2026 (interface PT/EN; idioma partilhado com os plugins Piradex em `Piradex.settings`)
 
 Este documento responde aos pontos 1 a 11 das instruções de desenvolvimento antes do código, e regista o que já foi implementado na Fase 1. Onde uma funcionalidade pedida não é fiável com a tecnologia actual, está escrito porquê e qual é a alternativa realista.
 
@@ -177,7 +177,7 @@ stems4u/
 ├─ stems4u/                  motor (pacote Python)
 │  ├─ __init__.py  __main__.py  cli.py  desktop.py  server.py  jobs.py
 │  ├─ pipeline.py  stems.py  audio_io.py  chunking.py  metrics.py
-│  ├─ hardware.py  config.py
+│  ├─ hardware.py  config.py  i18n.py (idioma PT/EN partilhado)
 │  └─ models/  manifest.json  registry.py  backends.py
 ├─ ui/index.html             interface (desktop e web)
 ├─ tests/                    testes do motor, da API e do modelo real

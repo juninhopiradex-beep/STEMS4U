@@ -6,6 +6,7 @@ numa thread separada, por isso a interface nunca bloqueia.
 from __future__ import annotations
 
 from .config import ensure_dirs, get_logger
+from .i18n import tr
 from .server import Engine, serve
 
 log = get_logger("stems4u.desktop")
@@ -32,11 +33,11 @@ def main():
         if kind == "folder":
             r = win.create_file_dialog(webview.FOLDER_DIALOG)
         elif kind == "project":
-            r = win.create_file_dialog(webview.OPEN_DIALOG, file_types=("Projecto STEMS4U (*.s4u)",))
+            r = win.create_file_dialog(webview.OPEN_DIALOG, file_types=(tr("Projecto STEMS4U (*.s4u)", "STEMS4U project (*.s4u)"),))
         else:
             r = win.create_file_dialog(webview.OPEN_DIALOG, allow_multiple=False, file_types=(
-                "Áudio (*.wav;*.aif;*.aiff;*.flac;*.mp3;*.m4a;*.aac;*.ogg)",
-                "Todos os ficheiros (*.*)"))
+                tr("Áudio", "Audio") + " (*.wav;*.aif;*.aiff;*.flac;*.mp3;*.m4a;*.aac;*.ogg)",
+                tr("Todos os ficheiros (*.*)", "All files (*.*)")))
         if not r:
             return None
         return r[0] if isinstance(r, (list, tuple)) else r

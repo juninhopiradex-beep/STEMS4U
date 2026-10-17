@@ -1,4 +1,4 @@
-# STEMS4U by Piradex
+# STEMS4U by Piradex — 2.0.0
 
 Separador profissional de stems para macOS (Intel e Apple Silicon), Windows e browser.
 Separa voz, bateria (bombo, tarola, toms, pratos), baixo, guitarra, piano e Other, com mixer multipista sincronizado à amostra, sem enviar a música para lado nenhum.
@@ -40,6 +40,16 @@ Ao abrir a app (ou a versão web) aparece o ecrã de senha. É o mesmo protocolo
 
 Nova senha beta: `python3 tools/nova_senha_beta.py 2026-11-01` (actualiza a app e a versão web) e fazer push.
 
+## Idioma (Português / English)
+
+A interface existe em **Português** e **English**. O selector **PT | EN** está na barra superior e no ecrã de senha; a mudança é imediata (não é preciso reiniciar).
+
+- Na app desktop a escolha fica no ficheiro partilhado por todos os produtos Piradex (ROOM-X, ANALYSER, MIXSPACE, EQMotion, DELEX e STEMS4U): mudar o idioma num muda em todos.
+  macOS `~/Library/Application Support/Piradex/Piradex.settings` · Windows `%APPDATA%\Piradex\Piradex.settings`.
+- Na primeira vez segue o idioma do sistema (pt → Português, outro → English).
+- Na versão web a escolha fica guardada no browser.
+- Os textos do motor nascem em PT e a interface traduz-os com um dicionário único (`ui/index.html`, `EN` / `EN_RULES`); `tests/test_i18n.py` falha se aparecer um texto do motor sem tradução. A linha de comandos continua em Português.
+
 ## Linha de comandos
 
 ```bash
@@ -68,7 +78,7 @@ python tools/benchmark.py bench/ --models htdemucs,htdemucs_ft --quality balance
    No Finder carrega **Cmd + Shift + .** para veres a pasta escondida `.github` — ela tem de ir também, é a que compila as apps.
 2. Em **Actions**, o workflow *Build STEMS4U* compila automaticamente:
    `STEMS4U-macOS-Intel.zip` (verificado para Catalina 10.15), `STEMS4U-macOS-AppleSilicon.zip`, `STEMS4U-Windows.zip`.
-   Descarrega-os em Actions → última execução → *Artifacts*.
+   Descarrega-os em Actions → última execução → *Artifacts*, ou em **Releases**: `ultima-build` (cada push) e `v2.0.0` (versão actual, lida de `stems4u/__init__.py`).
 3. Versão web: o `index.html` da raiz é a app (cópia de `ui/index.html` com o cabeçalho HTML). Em **Settings → Pages** basta *Deploy from a branch → main → / (root)*. Sempre que mudares `ui/index.html`, copia-o também para a raiz.
 4. Depois do primeiro build, copia os SHA-256 que aparecem no resumo do job *real-model* para o manifesto (ou corre `python tools/pin_models.py --write`). A partir daí, o verificador da build pública passa a verde.
 

@@ -32,5 +32,5 @@ exe = EXE(pyz, a.scripts, [], exclude_binaries=True, name="STEMS4U", console=Fal
 coll = COLLECT(exe, a.binaries, a.datas, name="STEMS4U", strip=False, upx=False)
 if sys.platform == "darwin":
     app = BUNDLE(coll, name="STEMS4U.app", bundle_identifier="com.piradex.stems4u",
-                 info_plist={"CFBundleShortVersionString": "0.1.0", "LSMinimumSystemVersion": "10.15",
+                 info_plist={"CFBundleShortVersionString": "2.0.0", "CFBundleVersion": "2.0.0", "LSMinimumSystemVersion": "10.15",
                              "NSHighResolutionCapable": True, "CFBundleDisplayName": "STEMS4U"})
