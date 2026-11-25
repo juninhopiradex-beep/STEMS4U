@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<title>STEMS4U by Piradex — Guia rápido e licença de utilização</title>
+<style>
+/*FONTS*/
+@page { size: A4; margin: 0; }
+:root{--ink:#0A0B0D;--ink2:#3F4550;--ink3:#6B7280;--line:#E3E5E9;--soft:#F5F6F8;--acc:#D96A12;
+ --voz:#FF5C8A;--bat:#FF9A3C;--bx:#8B7BFF;--gtr:#3CB4FF;--kb:#43D19E}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:#fff;color:var(--ink);font-family:'Geist',system-ui,sans-serif;font-size:10.5pt;line-height:1.5;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.page{width:210mm;height:297mm;padding:18mm 18mm 16mm;position:relative;page-break-after:always;overflow:hidden;display:flex;flex-direction:column}
+.page:last-child{page-break-after:auto}
+h1,h2,h3{font-family:'Unbounded',sans-serif;letter-spacing:-.01em;margin:0}
+h2{font-size:17pt;font-weight:700;margin:0 0 4mm}
+h3{font-size:11pt;font-weight:700;margin:6mm 0 2mm}
+p{margin:0 0 3mm}
+.eyebrow{font-family:'Geist Mono',monospace;font-size:7.5pt;letter-spacing:.2em;text-transform:uppercase;color:var(--ink3)}
+.mono{font-family:'Geist Mono',monospace}
+.muted{color:var(--ink3)}
+.runner{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);padding-bottom:3mm;margin-bottom:8mm}
+.logo{display:flex;align-items:center;gap:2.2mm;font-family:'Unbounded',sans-serif;font-weight:700;font-size:10pt}
+.bars{display:flex;align-items:flex-end;gap:.8mm;height:4.5mm}.bars i{display:block;width:1.1mm;border-radius:.3mm}
+.foot{margin-top:auto;padding-top:4mm;border-top:1px solid var(--line);display:flex;justify-content:space-between;font-size:7.5pt;color:var(--ink3)}
+table{width:100%;border-collapse:collapse;font-size:9.5pt}
+td,th{text-align:left;vertical-align:top;padding:2.1mm 2mm;border-bottom:1px solid var(--line)}
+th{font-weight:600;color:var(--ink3);font-size:8pt;letter-spacing:.08em;text-transform:uppercase}
+td:first-child{color:var(--ink3);width:38%}
+.steps{counter-reset:s;margin:0;padding:0;list-style:none}
+.steps li{counter-increment:s;position:relative;padding:0 0 3.2mm 10mm}
+.steps li::before{content:counter(s);position:absolute;left:0;top:-.2mm;width:6.5mm;height:6.5mm;border-radius:50%;background:var(--ink);color:#fff;font:700 8.5pt/6.5mm 'Geist',sans-serif;text-align:center}
+.steps b{font-weight:600}
+.box{border:1px solid var(--line);background:var(--soft);border-radius:3mm;padding:4mm 5mm;margin:3mm 0}
+.box.warn{border-color:#F3D3B5;background:#FFF6EE}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:6mm}
+.dot{display:inline-block;width:2.4mm;height:2.4mm;border-radius:.6mm;margin-right:2mm;vertical-align:.2mm}
+.k{font-family:'Geist Mono',monospace;font-size:8.8pt;background:var(--soft);border:1px solid var(--line);border-radius:1mm;padding:.2mm 1.4mm}
+ol.legal{margin:0;padding-left:5mm;font-size:9.2pt;line-height:1.48}
+ol.legal li{margin-bottom:2.4mm;padding-left:1mm}
+ol.legal b{font-weight:600}
+/* capa */
+.cover{background:#08090B;color:#EEF0F3;padding:22mm 20mm 18mm}
+.cover .eyebrow{color:#8A919E}
+.cover h1{font-size:44pt;font-weight:800;line-height:1;margin-top:58mm}
+.cover .lanes{margin-top:14mm;display:flex;flex-direction:column;gap:2.4mm}
+.cover .lane{display:grid;grid-template-columns:22mm 1fr;align-items:center;gap:4mm;font-family:'Geist Mono',monospace;font-size:7.5pt;color:#8A919E;text-transform:uppercase}
+.cover .foot{border-top-color:#22262D;color:#8A919E}
+</style>
+</head>
+<body>
+
+<!-- ============ CAPA ============ -->
+<section class="page cover">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <div class="logo" style="color:#EEF0F3"><span class="bars"><i style="height:2mm;background:var(--voz)"></i><i style="height:4.5mm;background:var(--bat)"></i><i style="height:3mm;background:var(--bx)"></i><i style="height:3.8mm;background:var(--gtr)"></i></span>PIRADEX</div>
+    <div class="eyebrow">Versão 2.0.0</div>
+  </div>
+  <h1>STEMS4U</h1>
+  <div style="font-family:'Unbounded',sans-serif;font-size:13pt;font-weight:500;color:#FF9A3C;margin-top:4mm">Separador de stems com IA</div>
+  <div style="margin-top:5mm;font-size:11pt;color:#B5BAC4">Guia rápido e licença de utilização</div>
+  <div class="lanes" id="lanes"></div>
+  <div style="margin-top:auto">
+    <div style="font-size:10pt;color:#B5BAC4">Aplicação profissional | macOS · Windows</div>
+    <div style="font-size:10pt;color:#B5BAC4">Desenvolvido por Juninho Piradex | Beatfreak Music</div>
+  </div>
+  <div class="foot" style="margin-top:8mm"><span>BEATFREAK MUSIC — Professional Audio Technology</span><span class="mono">www.beatfreakstudio.com</span></div>
+</section>
+
+<!-- ============ 2. BEM-VINDO ============ -->
+<section class="page">
+  <div class="runner"><div class="logo"><span class="bars"><i style="height:2mm;background:var(--voz)"></i><i style="height:4.5mm;background:var(--bat)"></i><i style="height:3mm;background:var(--bx)"></i><i style="height:3.8mm;background:var(--gtr)"></i></span>STEMS4U</div><div class="eyebrow">Guia rápido</div></div>
+  <h2>Bem-vindo ao STEMS4U</h2>
+  <p>Obrigado por escolher o STEMS4U. Esta aplicação separa uma música já misturada nas suas partes — voz, bateria peça a peça, baixo, guitarra, piano e o resto — para remisturas, karaoke, estudo, sampling, ensino ou masterização de stems.</p>
+  <p>Toda a separação é feita no teu computador por modelos de inteligência artificial. <b>A tua música nunca é enviada para a internet.</b> O ficheiro original nunca é alterado: o STEMS4U só grava os stems na pasta que escolheres.</p>
+
+  <h3>Informações do produto</h3>
+  <table>
+    <tr><td>Produto</td><td>STEMS4U by Piradex</td></tr>
+    <tr><td>Categoria</td><td>Separador de stems com IA (aplicação autónoma, não é plugin VST/AU)</td></tr>
+    <tr><td>Versão</td><td>2.0.0</td></tr>
+    <tr><td>Criador e Desenvolvedor</td><td>Ricardo Amorim / Juninho Piradex</td></tr>
+    <tr><td>Marca</td><td>Piradex Audio Plugins</td></tr>
+    <tr><td>Produção</td><td>Beatfreak Music / Beatfreak Studio</td></tr>
+    <tr><td>Website oficial</td><td>https://www.beatfreakstudio.com</td></tr>
+    <tr><td>Sistemas</td><td>macOS 10.15 Catalina ou mais recente (Intel e Apple Silicon) · Windows 10 e 11 (64 bits)</td></tr>
+    <tr><td>Ficheiros de entrada</td><td>WAV · AIFF · FLAC · MP3 · M4A</td></tr>
+    <tr><td>Exportação</td><td>WAV 16-bit (com dither), WAV 24-bit, WAV 32-bit float, AIFF 24-bit, FLAC 24-bit</td></tr>
+    <tr><td>Idiomas</td><td>Português e English (selector PT | EN na barra de cima)</td></tr>
+    <tr><td>Suporte</td><td>juninhopiradex@hotmail.com</td></tr>
+  </table>
+
+  <h3>Requisitos recomendados</h3>
+  <p>8 GB de memória (16 GB recomendados), cerca de 2 GB livres no disco para a app e os modelos, e internet apenas para descarregar os modelos. A senha é verificada no próprio computador, por isso, depois de instalados os modelos, o STEMS4U funciona sem internet.</p>
+
+  <div class="foot"><span>STEMS4U by Piradex · Guia rápido e licença</span><span>2</span></div>
+</section>
+
+<!-- ============ 3. INSTALAR E COMEÇAR ============ -->
+<section class="page">
+  <div class="runner"><div class="logo"><span class="bars"><i style="height:2mm;background:var(--voz)"></i><i style="height:4.5mm;background:var(--bat)"></i><i style="height:3mm;background:var(--bx)"></i><i style="height:3.8mm;background:var(--gtr)"></i></span>STEMS4U</div><div class="eyebrow">Instalação</div></div>
+  <h2>Instalar e abrir</h2>
+  <div class="grid2">
+    <div>
+      <h3 style="margin-top:0">macOS</h3>
+      <ol class="steps">
+        <li>Descarrega o ficheiro do teu Mac: <b>Intel</b> ou <b>Apple Silicon</b>. Para saber qual tens: menu Apple → <i>Acerca deste Mac</i>. "Chip Apple M1/M2/M3…" é Apple Silicon; "Processador Intel" é Intel.</li>
+        <li>Abre o ficheiro .zip e arrasta o <b>STEMS4U</b> para a pasta <b>Aplicações</b>.</li>
+        <li>Na primeira vez, clica com o <b>botão direito</b> no STEMS4U → <b>Abrir</b> → <b>Abrir</b>. Nas vezes seguintes abre normalmente.</li>
+      </ol>
+    </div>
+    <div>
+      <h3 style="margin-top:0">Windows</h3>
+      <ol class="steps">
+        <li>Descarrega o ficheiro para Windows e, no .zip, escolhe <b>botão direito → Extrair tudo</b>.</li>
+        <li>Guarda a pasta <b>STEMS4U</b> onde quiseres (por exemplo, em Documentos) e abre <b>STEMS4U.exe</b>.</li>
+        <li>Se aparecer "O Windows protegeu o seu PC", clica em <b>Mais informações</b> → <b>Executar mesmo assim</b>.</li>
+      </ol>
+    </div>
+  </div>
+  <div class="box">Estes avisos aparecem porque a aplicação ainda não tem assinatura digital paga da Apple e da Microsoft. O ficheiro descarregado de www.beatfreakstudio.com é o original.</div>
+
+  <h3>Primeiro arranque</h3>
+  <ol class="steps">
+    <li><b>Senha.</b> Introduz a senha que recebeste na compra. Deixa marcado <b>"Lembrar neste computador"</b> para não voltar a pedir.</li>
+    <li><b>Modelos.</b> Carrega em <b>Instalar modelos base</b> (cerca de 135 MB, uma só vez). Os modelos de alta qualidade e o modelo de bateria peça a peça instalam-se depois no botão <b>Modelos</b>.</li>
+    <li><b>Idioma.</b> O selector <b>PT | EN</b> muda a interface de imediato. A escolha é partilhada com os outros produtos Piradex do computador.</li>
+  </ol>
+  <p class="muted" style="font-size:9pt">Para ver o tipo de licença ou terminar a sessão neste computador, clica no selo da licença na barra de cima.</p>
+
+  <div class="foot"><span>STEMS4U by Piradex · Guia rápido e licença</span><span>3</span></div>
+</section>
+
+<!-- ============ 4. SEPARAR ============ -->
+<section class="page">
+  <div class="runner"><div class="logo"><span class="bars"><i style="height:2mm;background:var(--voz)"></i><i style="height:4.5mm;background:var(--bat)"></i><i style="height:3mm;background:var(--bx)"></i><i style="height:3.8mm;background:var(--gtr)"></i></span>STEMS4U</div><div class="eyebrow">Funções básicas</div></div>
+  <h2>Separar uma música</h2>
+  <ol class="steps">
+    <li><b>Mistura.</b> Arrasta a música para a janela ou carrega em <b>Escolher ficheiro</b>. Usa o master estéreo ou a mistura final com a melhor qualidade que tiveres (WAV ou FLAC dão melhor resultado do que MP3).</li>
+    <li><b>O que extrair.</b> Marca os stems que queres. Tudo o que não marcares fica junto em <b>Other</b>, por isso a soma dos stems volta a dar a música original.</li>
+    <li><b>Qualidade e formato.</b> Escolhe <b>Rápido</b>, <b>Equilibrado</b>, <b>Alta</b> ou <b>Ultra</b> e o formato de exportação. Mais qualidade demora mais tempo.</li>
+    <li><b>Duração.</b> Usa <b>Pré-escuta 10, 30 ou 60 s</b> para testar as opções em segundos e passa depois a <b>Música completa</b>.</li>
+    <li><b>Pasta de trabalho.</b> Escolhe onde gravar. Cada música fica numa pasta própria com os stems numerados, o projecto <span class="k">.s4u</span> e um relatório técnico.</li>
+    <li><b>Separar.</b> A barra mostra o progresso e o tempo. Podes <b>Cancelar</b> a qualquer momento.</li>
+  </ol>
+
+  <h3>Stems disponíveis</h3>
+  <table>
+    <tr><th style="width:30%">Grupo</th><th>Stems</th></tr>
+    <tr><td><span class="dot" style="background:var(--voz)"></span>Voz</td><td>Voz completa</td></tr>
+    <tr><td><span class="dot" style="background:var(--bat)"></span>Bateria</td><td>Bateria completa, ou peça a peça: bombo (kick), tarola (snare), timbalões (toms), hi-hat e pratos — com o modelo de bateria instalado em <b>Modelos</b></td></tr>
+    <tr><td><span class="dot" style="background:var(--bx)"></span>Baixo</td><td>Baixo eléctrico, synth bass e 808</td></tr>
+    <tr><td><span class="dot" style="background:var(--gtr)"></span>Música</td><td>Guitarra (acústica e eléctrica) e piano/teclados</td></tr>
+    <tr><td><span class="dot" style="background:#A6ACB7"></span>Other</td><td>Tudo o resto que não foi seleccionado</td></tr>
+  </table>
+  <p class="muted" style="font-size:9pt;margin-top:2mm">Opções que aparecem a cinzento ainda não têm um modelo fiável; passe o rato por cima para ver o motivo. Ficam disponíveis em actualizações futuras.</p>
+
+  <div class="foot"><span>STEMS4U by Piradex · Guia rápido e licença</span><span>4</span></div>
+</section>
+
+<!-- ============ 5. MIXER E DICAS ============ -->
+<section class="page">
+  <div class="runner"><div class="logo"><span class="bars"><i style="height:2mm;background:var(--voz)"></i><i style="height:4.5mm;background:var(--bat)"></i><i style="height:3mm;background:var(--bx)"></i><i style="height:3.8mm;background:var(--gtr)"></i></span>STEMS4U</div><div class="eyebrow">Funções básicas</div></div>
+  <h2>Ouvir, misturar e exportar</h2>
+  <p>No fim da separação, os stems abrem num mixer multipista sincronizado à amostra.</p>
+  <table>
+    <tr><td>Reproduzir / pausa</td><td>Botão ▶ ou tecla <span class="k">Espaço</span>. Clica na forma de onda para saltar para esse ponto.</td></tr>
+    <tr><td>Solo e Mute</td><td>Botões <b>S</b> e <b>M</b> em cada pista</td></tr>
+    <tr><td>Volume e Pan</td><td>Controlos de cada pista</td></tr>
+    <tr><td>Loop e zoom</td><td>Repetir um trecho e aproximar a forma de onda</td></tr>
+    <tr><td>Exportar mistura</td><td>Grava uma nova mistura com o volume, pan, mute e solo actuais (por exemplo, a música sem voz)</td></tr>
+    <tr><td>Guardar stems / Abrir pasta</td><td>Grava os stems no formato escolhido e abre a pasta no Finder ou no Explorador</td></tr>
+    <tr><td>Abrir projecto .s4u</td><td>Volta a uma separação feita, sem a calcular de novo</td></tr>
+    <tr><td>Relatório</td><td>Loudness (LUFS), true peak de cada stem e verificação de que a soma dos stems reconstrói o original</td></tr>
+  </table>
+
+  <h3>Dicas e resolução de problemas</h3>
+  <table>
+    <tr><td>A separação demora</td><td>É normal em computadores mais antigos: num Mac Intel de 2013, uma música de 4 minutos pode levar cerca de 8 minutos. Testa com a pré-escuta, usa <b>Equilibrado</b> e fecha outras aplicações pesadas. Macs Apple Silicon são muito mais rápidos.</td></tr>
+    <tr><td>Um stem tem restos de outro instrumento</td><td>Experimenta a qualidade <b>Alta</b> ou <b>Ultra</b> e um ficheiro de origem sem compressão (WAV/FLAC).</td></tr>
+    <tr><td>Uma opção está desactivada</td><td>Falta instalar o modelo correspondente: abre <b>Modelos</b>.</td></tr>
+    <tr><td>"Senha errada" ou "expirada"</td><td>Confirma letras e hífenes (não distingue maiúsculas). As senhas de teste (beta) têm validade. Escreve-nos se precisares de ajuda.</td></tr>
+    <tr><td>O Mac diz que a app "não pode ser aberta"</td><td>Usa botão direito → <b>Abrir</b> (ver página 3).</td></tr>
+  </table>
+
+  <div class="foot"><span>STEMS4U by Piradex · Guia rápido e licença</span><span>5</span></div>
+</section>
+
+<!-- ============ 6. LICENÇA ============ -->
+<section class="page">
+  <div class="runner"><div class="logo"><span class="bars"><i style="height:2mm;background:var(--voz)"></i><i style="height:4.5mm;background:var(--bat)"></i><i style="height:3mm;background:var(--bx)"></i><i style="height:3.8mm;background:var(--gtr)"></i></span>STEMS4U</div><div class="eyebrow">Informação legal</div></div>
+  <h2>Licença de utilização</h2>
+  <p style="font-size:9.2pt">Ao instalar ou utilizar o STEMS4U aceitas estes termos. Se não concordares, não instales nem utilizes o software.</p>
+  <ol class="legal">
+    <li><b>Titularidade.</b> O STEMS4U, a sua interface, código, marca e documentação são propriedade de Ricardo Amorim (Juninho Piradex) / Beatfreak Music — Piradex Audio Plugins. O software é licenciado, não vendido.</li>
+    <li><b>Licença concedida.</b> A compra dá-te uma licença pessoal, não exclusiva e intransmissível para instalar e utilizar o STEMS4U em até <b>2 computadores teus</b>, para fins pessoais e profissionais, incluindo trabalho comercial de produção, mistura e masterização.</li>
+    <li><b>Senha de acesso.</b> A senha é pessoal. Não a podes partilhar, publicar, vender ou ceder. Uma senha partilhada pode ser desactivada sem aviso prévio.</li>
+    <li><b>Restrições.</b> Não podes copiar ou distribuir o software, alugá-lo ou revendê-lo, descompilar ou modificar o programa, nem contornar ou desactivar a protecção por senha, salvo nos casos em que a lei o permita expressamente.</li>
+    <li><b>O teu áudio e os stems.</b> A Piradex não reclama qualquer direito sobre as músicas que processas nem sobre os stems que crias. És o único responsável por ter os direitos ou as autorizações necessárias sobre o material que separas e sobre o uso que fazes dos resultados. Separar uma música de terceiros não te dá direitos sobre ela.</li>
+    <li><b>Privacidade.</b> A separação é feita no teu computador e o áudio não é enviado para a Piradex nem para terceiros. A internet é usada apenas para descarregar os modelos de IA.</li>
+    <li><b>Actualizações.</b> As actualizações dentro da versão 2.x são gratuitas. Versões beta ou de teste podem conter erros e ter uma data de validade.</li>
+    <li><b>Componentes de terceiros.</b> O STEMS4U inclui software de código aberto usado de acordo com as respectivas licenças, entre os quais: Demucs / HTDemucs (Meta AI, licença MIT), PyTorch (BSD-3-Clause), NumPy e SciPy (BSD-3-Clause), soundfile e libsndfile (BSD-3-Clause / LGPL-2.1, biblioteca dinâmica substituível), pywebview (BSD-3-Clause) e Python (PSF). O modelo de bateria peça a peça usa pesos de aufr33 e jarredou. Estas licenças aplicam-se apenas a esses componentes.</li>
+    <li><b>Garantia.</b> O software é fornecido "tal como está". A qualidade da separação depende da gravação original e não é garantido um resultado perfeito para todas as músicas.</li>
+    <li><b>Responsabilidade.</b> Na medida máxima permitida por lei, a Piradex não é responsável por danos indirectos, perda de dados ou de trabalho. A responsabilidade total fica limitada ao valor pago pela licença. Faz sempre cópias de segurança do teu trabalho.</li>
+    <li><b>Cessação.</b> A licença termina automaticamente se não cumprires estes termos. Nesse caso deves desinstalar o software.</li>
+    <li><b>Lei aplicável.</b> Estes termos regem-se pela lei da República de Angola.</li>
+  </ol>
+  <div class="box" style="font-size:9pt;margin-top:2mm">© 2026 Beatfreak Music / Piradex Audio Plugins. Todos os direitos reservados. STEMS4U e Piradex são marcas de Ricardo Amorim (Juninho Piradex). Os restantes nomes e marcas pertencem aos respectivos titulares.</div>
+  <div class="foot"><span>BEATFREAK MUSIC — Professional Audio Technology · juninhopiradex@hotmail.com</span><span class="mono">www.beatfreakstudio.com</span></div>
+</section>
+
+<script>
+(function(){
+  function wave(kind, seed){ var s=seed; function r(){ s=(s*16807)%2147483647; return s/2147483647; }
+    var N=140, top=[], i;
+    for(i=0;i<N;i++){ var t=i/N, sec=t<.15?.35:t<.45?.8:t<.55?.3:1, tex;
+      if(kind==='kick') tex=(i%4===0)?1:.1; else if(kind==='snare') tex=(i%8===4)?.95:.06;
+      else if(kind==='hat') tex=(i%2===0)?.45+r()*.2:.12; else if(kind==='voice') tex=((i%24)<17?.55+r()*.45:.05);
+      else if(kind==='bass') tex=.65+.3*Math.sin(i*.9); else tex=.4+r()*.45;
+      top.push(Math.max(.03,Math.min(1,sec*tex))); }
+    var d='M0,20 '; for(i=0;i<N;i++) d+='L'+(i*1000/(N-1)).toFixed(1)+','+(20-top[i]*18).toFixed(1)+' ';
+    for(i=N-1;i>=0;i--) d+='L'+(i*1000/(N-1)).toFixed(1)+','+(20+top[i]*18).toFixed(1)+' '; return d+'Z'; }
+  var defs=[['Voz','#FF5C8A','voice',3],['Kick','#FF9A3C','kick',7],['Snare','#FFB870','snare',11],['Hi-hat','#FFD08A','hat',13],['Baixo','#8B7BFF','bass',17],['Guitarra','#3CB4FF','gtr',19],['Piano','#43D19E','keys',23]];
+  document.getElementById('lanes').innerHTML = defs.map(function(x){ return '<div class="lane"><span>'+x[0]+'</span><svg viewBox="0 0 1000 40" preserveAspectRatio="none" style="width:100%;height:7mm;display:block"><path d="'+wave(x[2],x[3]*991+7)+'" fill="'+x[1]+'"/></svg></div>'; }).join('');
+})();
+</script>
+</body>
+</html>

@@ -84,6 +84,11 @@ python tools/benchmark.py bench/ --models htdemucs,htdemucs_ft --quality balance
 
 As apps não estão assinadas nem notarizadas: no Mac abre a primeira vez com botão direito → Abrir.
 
+## Guia rápido e licença (PDF que vai no download)
+
+Cada .zip publicado leva `STEMS4U - Guia rapido e licenca.pdf` (instalação, funções básicas, resolução de problemas e licença de utilização).
+O texto está em `docs/guia/guia.html`; depois de o alterar, gera o PDF de novo (por exemplo, abrindo o HTML no Chrome → Imprimir → Guardar como PDF, A4, com gráficos de fundo) e grava-o em `docs/`.
+
 ## Onde ficam os dados
 
 | | macOS | Windows |

@@ -64,7 +64,13 @@ jobs:
         run: |
           source .venv/bin/activate
           pyinstaller packaging/stems4u.spec --noconfirm --distpath dist --workpath build
-      - run: ditto -c -k --keepParent dist/STEMS4U.app STEMS4U-macOS-Intel.zip
+      - name: Zip (app + guia em PDF)
+        run: |
+          mkdir -p pkg/STEMS4U
+          ditto dist/STEMS4U.app pkg/STEMS4U/STEMS4U.app
+          cp "docs/STEMS4U - Guia rapido e licenca.pdf" pkg/STEMS4U/
+          ditto -c -k --keepParent pkg/STEMS4U STEMS4U-macOS-Intel.zip
+          unzip -l STEMS4U-macOS-Intel.zip | grep "Guia rapido e licenca.pdf"
       - uses: actions/upload-artifact@v4
         with: { name: STEMS4U-macOS-Intel, path: STEMS4U-macOS-Intel.zip }
       - name: Verificar que corre em macOS 10.15
@@ -86,7 +92,13 @@ jobs:
           pip install -r requirements.txt "pyinstaller>=6.16" "setuptools<80"
           pip install demucs==4.0.1 --no-deps
       - run: pyinstaller packaging/stems4u.spec --noconfirm --distpath dist --workpath build
-      - run: ditto -c -k --keepParent dist/STEMS4U.app STEMS4U-macOS-AppleSilicon.zip
+      - name: Zip (app + guia em PDF)
+        run: |
+          mkdir -p pkg/STEMS4U
+          ditto dist/STEMS4U.app pkg/STEMS4U/STEMS4U.app
+          cp "docs/STEMS4U - Guia rapido e licenca.pdf" pkg/STEMS4U/
+          ditto -c -k --keepParent pkg/STEMS4U STEMS4U-macOS-AppleSilicon.zip
+          unzip -l STEMS4U-macOS-AppleSilicon.zip | grep "Guia rapido e licenca.pdf"
       - uses: actions/upload-artifact@v4
         with: { name: STEMS4U-macOS-AppleSilicon, path: STEMS4U-macOS-AppleSilicon.zip }
       - run: bash packaging/ci_run.sh dist/STEMS4U.app/Contents/MacOS/STEMS4U selftest
@@ -103,7 +115,12 @@ jobs:
           pip install -r requirements.txt "pyinstaller>=6.16" "setuptools<80"
           pip install demucs==4.0.1 --no-deps
       - run: pyinstaller packaging/stems4u.spec --noconfirm --distpath dist --workpath build
-      - run: Compress-Archive -Path dist\STEMS4U -DestinationPath STEMS4U-Windows.zip
+      - run: |
+          Copy-Item "docs\STEMS4U - Guia rapido e licenca.pdf" dist\STEMS4U\
+          Compress-Archive -Path dist\STEMS4U -DestinationPath STEMS4U-Windows.zip
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $n = [IO.Compression.ZipFile]::OpenRead("$PWD\STEMS4U-Windows.zip").Entries | Where-Object { $_.FullName -like '*Guia rapido e licenca.pdf' }
+          if (-not $n) { throw 'Guia em PDF em falta no zip' }
         shell: pwsh
       - uses: actions/upload-artifact@v4
         with: { name: STEMS4U-Windows, path: STEMS4U-Windows.zip }
